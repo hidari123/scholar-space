@@ -1,0 +1,42 @@
+[project]
+name = "scholarspace-events"
+version = "0.1.0"
+description = "scholarspace 事件服务 —— 事件总线 + 事件流（SSE 支撑）"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Proprietary" }
+
+# ⚠️ 领域层零依赖 —— 只有基础设施层需要外部库。
+dependencies = []
+
+[project.optional-dependencies]
+redis = [
+    "redis>=5.2",
+]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.9",
+    "mypy>=1.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scholar_events"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/scholar_events", "README.md"]
+
+[tool.ruff]
+extend = "./ruff.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+addopts = "-ra --strict-markers --tb=short"
