@@ -131,3 +131,16 @@ forbidden_dependencies:
     - community
   community:
     - paper
+  # ⚠️ identity 是独立仓 —— 不依赖主仓任何东西
+  #    它只发事件，谁需要谁订阅（billing / community / auth…）
+  identity:
+    - auth
+    - billing
+    - community
+    - paper
+    - slides
+    - orchestra
+  # ⚠️ auth 不 import identity 的内部实现 ——
+  #    只通过 UserRegistered 事件与 user_id 关联
+  auth:
+    - identity
