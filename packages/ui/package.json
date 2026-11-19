@@ -1,0 +1,65 @@
+{
+  "name": "@scholarspace/ui",
+  "version": "0.1.0",
+  "description": "scholarspace 共享设计系统 —— AntD 基座 + 品牌主题 + 多语言",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": ["**/*.css"],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build"
+  },
+
+  "dependencies": {
+    "antd": "^5.29.3"
+  },
+
+  "peerDependencies": {
+    "react": ">=18.0.0 <20",
+    "react-dom": ">=18.0.0 <20"
+  },
+
+  "peerDependenciesMeta": {
+    "react": { "optional": false },
+    "react-dom": { "optional": false }
+  },
+
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "jsdom": "^26.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsup": "^9.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

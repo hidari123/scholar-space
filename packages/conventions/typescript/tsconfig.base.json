@@ -1,6 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "_comment": "TypeScript 规范基座 — 规范唯一来源：scholarspace/packages/conventions/typescript/tsconfig.base.json",
 
   "compilerOptions": {
     /* ── 严格性 ───────────────────────────────────── */

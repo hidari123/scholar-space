@@ -1,0 +1,92 @@
+/*
+ * scholarspace 语义 CSS 变量。
+ *
+ * 把 AntD 的 token 输出别名化，命名空间统一为 --ss-。
+ * 给非 React 消费方使用（iframe / 邮件模板 / PPT 导出 / 原生 CSS）。
+ *
+ * ⚠️ AntD v5 的 CSS-in-JS 需要开启 hashPriority 才能输出 CSS 变量，
+ *    见 apps/web 的 StyleProvider 配置。
+ */
+
+:root {
+  /* ── 品牌主色 ───────────────────────────────────── */
+  --ss-color-primary: var(--ant-color-primary);
+  --ss-color-primary-hover: var(--ant-color-primary-hover);
+  --ss-color-primary-active: var(--ant-color-primary-active);
+  --ss-color-primary-bg: var(--ant-color-primary-bg);
+  --ss-color-primary-border: var(--ant-color-primary-border);
+  --ss-color-primary-text: var(--ant-color-primary-text);
+  --ss-color-link: var(--ant-color-link);
+  --ss-color-link-hover: var(--ant-color-link-hover);
+  --ss-color-link-active: var(--ant-color-link-active);
+
+  /* ── 背景 ───────────────────────────────────────── */
+  --ss-color-bg: var(--ant-color-bg-layout);
+  --ss-color-surface: var(--ant-color-bg-container);
+  --ss-color-surface-raised: var(--ant-color-bg-elevated);
+  --ss-color-surface-alt: var(--ant-color-bg-spotlight);
+
+  /* ── 边框 ───────────────────────────────────────── */
+  --ss-color-border: var(--ant-color-border);
+  --ss-color-border-secondary: var(--ant-color-border-secondary);
+
+  /* ── 文本 ───────────────────────────────────────── */
+  --ss-color-text: var(--ant-color-text);
+  --ss-color-text-secondary: var(--ant-color-text-secondary);
+  --ss-color-text-tertiary: var(--ant-color-text-tertiary);
+  --ss-color-text-quaternary: var(--ant-color-text-quaternary);
+
+  /* ── 语义色 ─────────────────────────────────────── */
+  --ss-color-success: var(--ant-color-success);
+  --ss-color-warning: var(--ant-color-warning);
+  --ss-color-error: var(--ant-color-error);
+  --ss-color-info: var(--ant-color-info);
+
+  /* ── 填充 ───────────────────────────────────────── */
+  --ss-color-fill: var(--ant-color-fill);
+  --ss-color-fill-secondary: var(--ant-color-fill-secondary);
+  --ss-color-fill-tertiary: var(--ant-color-fill-tertiary);
+
+  /* ── 圆角 ───────────────────────────────────────── */
+  --ss-radius-sm: var(--ant-border-radius-sm);
+  --ss-radius: var(--ant-border-radius);
+  --ss-radius-lg: var(--ant-border-radius-lg);
+  --ss-radius-xl: var(--ant-border-radius-xl);
+
+  /* ── 字体 ───────────────────────────────────────── */
+  --ss-font-sans: var(--ant-font-family);
+  --ss-font-mono: var(--ant-font-family-code);
+  --ss-text-xs: var(--ant-font-size-xs);
+  --ss-text-sm: var(--ant-font-size-sm);
+  --ss-text-base: var(--ant-font-size);
+  --ss-text-lg: var(--ant-font-size-lg);
+  --ss-text-xl: var(--ant-font-size-xl);
+
+  /* ── 阴影 ───────────────────────────────────────── */
+  --ss-shadow: var(--ant-box-shadow);
+  --ss-shadow-secondary: var(--ant-box-shadow-secondary);
+  --ss-shadow-tertiary: var(--ant-box-shadow-tertiary);
+
+  /* ── 动效 ───────────────────────────────────────── */
+  --ss-motion-fast: var(--ant-motion-duration-fast);
+  --ss-motion-base: var(--ant-motion-duration-mid);
+  --ss-motion-slow: var(--ant-motion-duration-slow);
+
+  /* ── 层级 ───────────────────────────────────────── */
+  --ss-z-drawer: var(--ant-z-index-popup);
+  --ss-z-modal: var(--ant-z-index-modal);
+  --ss-z-message: var(--ant-z-index-message);
+  --ss-z-notification: var(--ant-z-index-notification);
+
+  /* ── 布局 ───────────────────────────────────────── */
+  --ss-header-height: 56px;
+  --ss-content-padding: 24px;
+}
+
+/*
+ * RTL 支持。
+ * 使用逻辑属性（inset-inline-start 等）而非 left/right。
+ */
+[dir="rtl"] {
+  --ss-content-padding: 24px;
+}
