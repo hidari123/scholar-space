@@ -8,18 +8,18 @@
  */
 
 import type { Locale } from 'antd/es/locale';
-import arEG from 'antd/locale/ar_EG';
-import deDE from 'antd/locale/de_DE';
-import enUS from 'antd/locale/en_US';
-import esES from 'antd/locale/es_ES';
-import frFR from 'antd/locale/fr_FR';
-import jaJP from 'antd/locale/ja_JP';
-import koKR from 'antd/locale/ko_KR';
-import ptBR from 'antd/locale/pt_BR';
-import ruRU from 'antd/locale/ru_RU';
-import zhCN from 'antd/locale/zh_CN';
-import zhHK from 'antd/locale/zh_HK';
-import zhTW from 'antd/locale/zh_TW';
+import arEG from 'antd/locale/ar_EG.js';
+import deDE from 'antd/locale/de_DE.js';
+import enUS from 'antd/locale/en_US.js';
+import esES from 'antd/locale/es_ES.js';
+import frFR from 'antd/locale/fr_FR.js';
+import jaJP from 'antd/locale/ja_JP.js';
+import koKR from 'antd/locale/ko_KR.js';
+import ptBR from 'antd/locale/pt_BR.js';
+import ruRU from 'antd/locale/ru_RU.js';
+import zhCN from 'antd/locale/zh_CN.js';
+import zhHK from 'antd/locale/zh_HK.js';
+import zhTW from 'antd/locale/zh_TW.js';
 
 /** 语言定义。 */
 export interface LocaleDefinition {

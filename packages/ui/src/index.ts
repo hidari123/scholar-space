@@ -6,6 +6,9 @@
  *    见 docs/adr/0002-antd-foundation.md
  */
 
+// ── AntD 组件再导出（业务代码的唯一组件入口）────────────
+export * from './antd';
+
 export type { LocaleDefinition } from './i18n/locales';
 // ── 国际化 ────────────────────────────────────────────
 export {
