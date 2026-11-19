@@ -19,16 +19,16 @@ node tools/guards/dist/cli.js list               # 列出
 
 ## 已实现的护栏
 
-| # | 护栏 | 检查什么 | 级别 |
-|---|---|---|---|
-| **G7** | 禁止直接 import antd | 业务代码只能 `import from '@scholarspace/ui'`（ui 包豁免）| 阻断 |
-| **G11** | 组件级 theme 禁颜色 | `theme.components.*` 里不许出现硬编码 hex | 阻断 |
-| **G13** | i18n key 命名规范 | key 的 domain 必须在允许列表里 | 阻断 |
-| **G16** | 密钥扫描 | OpenAI / GitHub / AWS / 私钥模式 | 阻断 |
-| **G17** | License 扫描 | 禁 AGPL / GPL-3.0 / SSPL | 阻断 |
-| **G21** | 包体积上限 | `packages/ui/dist` ≤ 80 kB | 提醒 |
-| **G23** | extends 引用有效性 | tsconfig / biome 的 extends 目标必须存在 | 阻断 |
-| **G24** | 测试函数名必须英文 | `def test_xxx(` 的名字不得含非 ASCII | 阻断 |
+| #       | 护栏                 | 检查什么                                                   | 级别 |
+| ------- | -------------------- | ---------------------------------------------------------- | ---- |
+| **G7**  | 禁止直接 import antd | 业务代码只能 `import from '@scholarspace/ui'`（ui 包豁免） | 阻断 |
+| **G11** | 组件级 theme 禁颜色  | `theme.components.*` 里不许出现硬编码 hex                  | 阻断 |
+| **G13** | i18n key 命名规范    | key 的 domain 必须在允许列表里                             | 阻断 |
+| **G16** | 密钥扫描             | OpenAI / GitHub / AWS / 私钥模式                           | 阻断 |
+| **G17** | License 扫描         | 禁 AGPL / GPL-3.0 / SSPL                                   | 阻断 |
+| **G21** | 包体积上限           | `packages/ui/dist` ≤ 80 kB                                 | 提醒 |
+| **G23** | extends 引用有效性   | tsconfig / biome 的 extends 目标必须存在                   | 阻断 |
+| **G24** | 测试函数名必须英文   | `def test_xxx(` 的名字不得含非 ASCII                       | 阻断 |
 
 ---
 
@@ -39,6 +39,7 @@ node tools/guards/dist/cli.js list               # 列出
 **这是最重要的一条。**
 
 biome 的 `extends` 指向不存在的路径时：
+
 - ❌ **不报错**
 - ❌ 规则全部失效
 - ✅ CI 照样绿灯
