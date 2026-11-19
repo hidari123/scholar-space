@@ -1,0 +1,91 @@
+# import-linter — 依赖护栏（基座）
+#
+# 用法（子项目 importlinter.ini）：
+#   [importlinter]
+#   root_package = "<PACKAGE>"        ← 由脚手架替换
+#   include_external_packages = true
+#
+#   [[importlinter:contract]]
+#   name = "分层：interfaces → application → domain"
+#   type = "layers"
+#   layers = [
+#       "<pkg>.interfaces",
+#       "<pkg>.infrastructure",
+#       "<pkg>.application",
+#       "<pkg>.domain",
+#   ]
+#
+# ⚠️ 本文件是模板。实际生效的是各子项目的 importlinter.ini，
+#    它由 `cli new` 生成并填好包名。
+
+[importlinter]
+root_package = "<PACKAGE>"
+include_external_packages = true
+exhaustive = true
+
+# ══════════════════════════════════════════════════════════
+# G1 — 四层架构
+# ══════════════════════════════════════════════════════════
+[[importlinter:contract]]
+name = "G1 分层：interfaces → infrastructure → application → domain"
+type = "layers"
+layers = [
+    "<pkg>.interfaces",
+    "<pkg>.infrastructure",
+    "<pkg>.application",
+    "<pkg>.domain",
+]
+exhaustive = true
+
+# ══════════════════════════════════════════════════════════
+# G2 — domain 层零外部依赖
+# ══════════════════════════════════════════════════════════
+[[importlinter:contract]]
+name = "G2 domain 层零外部依赖"
+type = "forbidden"
+source_modules = ["<pkg>.domain"]
+forbidden_modules = [
+    # Web 框架
+    "fastapi", "starlette", "flask",
+    # 数据
+    "sqlalchemy", "alembic",
+    # 网络
+    "requests", "httpx", "aiohttp",
+    # 基础设施
+    "redis", "minio", "boto3", "celery", "arq",
+    # 配置
+    "pydantic_settings", "dotenv",
+]
+
+# ══════════════════════════════════════════════════════════
+# G3 — application 不碰 infrastructure
+# ══════════════════════════════════════════════════════════
+[[importlinter:contract]]
+name = "G3 application 不依赖 infrastructure"
+type = "forbidden"
+source_modules = ["<pkg>.application"]
+forbidden_modules = ["<pkg>.infrastructure"]
+
+# ══════════════════════════════════════════════════════════
+# G4 — interfaces 不依赖实现细节
+# ══════════════════════════════════════════════════════════
+[[importlinter:contract]]
+name = "G4 interfaces 不依赖 infrastructure"
+type = "forbidden"
+source_modules = ["<pkg>.interfaces"]
+forbidden_modules = ["<pkg>.infrastructure"]
+
+[[importlinter:contract]]
+name = "G5 domain 不依赖 application"
+type = "forbidden"
+source_modules = ["<pkg>.domain"]
+forbidden_modules = ["<pkg>.application", "<pkg>.infrastructure", "<pkg>.interfaces"]
+
+# ══════════════════════════════════════════════════════════
+# 跨包约束（各子项目在自己的 importlinter.ini 里补充）
+# ══════════════════════════════════════════════════════════
+# 示例：slides 不依赖 paper / community / orchestra
+# [[importlinter:contract]]
+# name = "slides 不依赖 paper / community / orchestra"
+# type = "forbidden"
+# forbidden_modules = ["paper", "community", "orchestra"]

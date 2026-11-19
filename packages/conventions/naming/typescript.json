@@ -1,0 +1,72 @@
+{
+  "$comment": "TypeScript 命名规则 — 规范唯一来源。CI 护栏读取本文件做静态检查。",
+
+  "components": {
+    "fileName": "PascalCase",
+    "note": "组件目录用 PascalCase，如 components/PageHeader/index.tsx"
+  },
+
+  "utilityFiles": {
+    "fileName": "kebab-case",
+    "pattern": "^[a-z][a-z0-9-]*\\.(ts|tsx)$",
+    "note": "工具文件用 kebab-case，如 text-measure.ts"
+  },
+
+  "functions": {
+    "pattern": "^[a-z][a-zA-Z0-9]*$",
+    "note": "camelCase"
+  },
+
+  "hooks": {
+    "pattern": "^use[A-Z][a-zA-Z0-9]*$",
+    "note": "use 前缀 + PascalCase"
+  },
+
+  "types": {
+    "pattern": "^[A-Z][A-Za-z0-9]*$",
+    "suffixes": ["Config", "Data", "Options", "Props", "Spec", "Type", "Info"],
+    "note": "PascalCase + 语义后缀"
+  },
+
+  "constants": {
+    "pattern": "^[A-Z][A-Z0-9_]*$"
+  },
+
+  "props": {
+    "eventPattern": "^on[A-Z][a-zA-Z0-9]*$",
+    "note": "事件 prop 一律 on<Event>，如 onSelectionChange",
+    "booleanPrefixes": ["is", "has", "should", "can"],
+    "controlledPattern": "^(value|checked|open|selected)",
+    "controlledNote": "受控值用 value/checked/open/selected，回调统一 on<Event>Change"
+  },
+
+  "cssVariables": {
+    "pattern": "^--ss-[a-z0-9-]+$",
+    "note": "统一 --ss- 前缀（scholarspace），不用 scpdf- 等包级前缀"
+  },
+
+  "i18nKeys": {
+    "pattern": "^(auth|paper|slides|orchestra|community|billing|pdf|common|authz|workspace)\\.[a-zA-Z]+(\\.[a-zA-Z]+)*$",
+    "note": "见 i18n/key-patterns.json"
+  },
+
+  "tests": {
+    "pattern": "\\.test\\.(ts|tsx)$"
+  },
+
+  "e2e": {
+    "dir": "e2e",
+    "pattern": "^[a-z0-9-]+\\.spec\\.ts$"
+  },
+
+  "layerDirs": {
+    "required": ["core", "components", "hooks"],
+    "note": "TS 包三层。core 必须零 React、零 DOM。"
+  },
+
+  "forbidden": {
+    "imports": ["antd"],
+    "importException": "仅 packages/ui/src/ 内部允许",
+    "note": "铁律：业务代码只能从 @scholarspace/ui 引入组件"
+  }
+}

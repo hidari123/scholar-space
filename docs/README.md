@@ -1,0 +1,214 @@
+# scholarspace — 项目总纲
+
+> 平台级学术工作空间。13 个独立子项目 + 1 个组装主项目。
+>
+> **状态**：规划阶段（未写业务代码）
+> **文档版本**：v1.0
+> **最后更新**：2026-11-19
+
+---
+
+## 0. 一句话
+
+**读论文 → 懂论文 → 出成果** 的完整闭环，由可独立发布、可独立演进的子项目组成。
+
+---
+
+## 1. 核心原则（不可妥协）
+
+| # | 原则 | 落地方式 |
+|---|---|---|
+| 1 | **只借鉴，不复制** | 所有参考项目只取"设计思路"与"算法"，不拷贝源码。CI 加 license 扫描门禁 |
+| 2 | **契约先行** | OpenAPI / JSON Schema 定义在主仓 `contracts/`，代码由 codegen 生成，不手写 DTO |
+| 3 | **依赖倒置** | 领域层零外部依赖；外部系统一律走 Port 接口 |
+| 4 | **规范可执行** | 规范是配置文件（`packages/conventions/`），不是文档；脚手架继承，CI 校验 |
+| 5 | **表面积最小** | 每个包只暴露 `__init__.py` 公开 API，禁止摸内部实现 |
+| 6 | **可替换** | LLM / 存储 / 队列 / 渲染器全部走 Port，可整体换实现 |
+| 7 | **单轨优先** | 每个子项目在投产前完成自研重写，不长期维护双轨 |
+
+---
+
+## 2. 文档索引
+
+| 文档 | 内容 |
+|---|---|
+| [00-项目地图.md](./00-项目地图.md) | 快速定位：我在做什么？现在到哪了？下一步？|
+| [01-精华与糟粕.md](./01-精华与糟粕.md) | 每个参考项目的"留/弃"逐条判定 |
+| [02-技术栈.md](./02-技术栈.md) | 统一技术栈与选型理由 |
+| [03-语言体系.md](./03-语言体系.md) | 界面语言 / 内容语言 / 自定义语言完整设计 |
+| [04-主题与设计系统.md](./04-主题与设计系统.md) | 品牌主题、多层级配置、AntD 集成 |
+| [05-代码规范.md](./05-代码规范.md) | Python / TypeScript / API / Git 规范 |
+| [06-架构护栏.md](./06-架构护栏.md) | 依赖规则、CI 门禁清单 |
+| [07-orchestra.md](./07-orchestra.md) | 编排引擎完整设计 |
+| [08-slides.md](./08-slides.md) | PPT 引擎完整设计 |
+| [09-脚手架.md](./09-脚手架.md) | scholarspace-cli 设计 |
+| [10-迁移路线.md](./10-迁移路线.md) | 双轨迁移与数据迁移 |
+| **[11-执行计划.md](./11-执行计划.md)** | ⭐ **执行步骤与里程碑** |
+| [MANIFEST.md](./MANIFEST.md) | 文档清单 + 待确认项 |
+| [adr/](./adr/) | 架构决策记录 |
+
+---
+
+## 3. 项目总表
+
+### 3.1 主项目（组装层，零业务代码）
+
+```
+scholarspace/
+├── packages/
+│   ├── conventions/     规范唯一来源（可执行配置片段）
+│   ├── ui/              设计系统（AntD 基座 + 品牌主题 + i18n）
+│   └── core/            核心底座
+├── contracts/           OpenAPI + JSON Schema + i18n schema
+├── apps/                gateway / web / slides-web / orchestra-web / worker
+├── infra/               Docker / K8s / 观测 / CI 模板
+├── docs/adr/            架构决策记录
+├── tools/codegen/       契约 → 代码
+└── cli/                 项目脚手架
+```
+
+### 3.2 独立项目（13 个，各自 Git 仓库 + 独立版本 + 独立 CI）
+
+| # | 包名 | 中文 | 语言 | 来源 |
+|---|---|---|---|---|
+| 1 | `@scholarspace/core` | 核心底座 | Python | ♻️ 重写 |
+| 2 | `@scholarspace/auth` | 鉴权 | Python | ♻️ 重写 |
+| 3 | `@scholarspace/llm` | 模型网关 | Python | ♻️ 重写 |
+| 4 | `@scholarspace/storage` | 对象存储 | Python | ♻️ 重写 |
+| 5 | `@scholarspace/events` | 事件总线 | Python | ♻️ 重写 |
+| 6 | `@scholarspace/billing` | 计费账本 | Python | ♻️ 重写 |
+| 7 | `@scholarspace/paper` | 文献研究 | Python | ♻️ 重写 |
+| 8 | `@scholarspace/slides` | 演示文稿引擎 | Python | ♻️ 重写 |
+| 9 | `@scholarspace/orchestra` | 编排引擎 | Python | ♻️ 重写 |
+| 10 | `@scholarspace/community` | 学术社区 | Python | ♻️ 重写 |
+| 11 | `@scholarspace/federation` | ActivityPub 联邦 | Python | 🆕 |
+| 12 | `@scholarspace/ui` | 共享组件库 | TypeScript | ♻️ 重写 |
+| 13 | `@scholarspace/pdf-viewer` | PDF 查看器 | TypeScript | ❄️ **冻结中** |
+
+### 3.3 工具
+
+| 工具 | 说明 |
+|---|---|
+| `@scholarspace/cli` | 项目脚手架 |
+
+---
+
+## 4. 依赖拓扑
+
+```
+                    ┌──────────┐
+                    │   core   │  ← 谁都能依赖
+                    └────┬─────┘
+                         │
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+      auth             llm             storage
+        │                │                │
+        └────────────────┴──────┬─────────┘
+                                ▼
+                          ┌───────────┐
+                          │  events   │
+                          └─────┬─────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+    billing                  paper                  community ──► federation
+        │                       │                       │
+        │                       ▼                       │
+        │                  insight（合并入 paper）      │
+        │                       │                       │
+        └───────────┬───────────┴───────────────────────┘
+                    ▼
+                 slides
+                    │
+                    ▼
+              orchestra
+```
+
+**规则**：
+- `core` 不依赖任何业务包
+- `billing` 不依赖业务包（业务包依赖 billing）
+- `slides` 只依赖 `core` + `llm` + `events`，**不依赖** `paper`/`community`（通过 DTO 传入内容）
+- `orchestra` 依赖 `core` + `llm` + `events`
+- `community` 不依赖 `paper`（只通过 ID 引用）
+- 跨包禁止摸内部实现
+
+---
+
+## 5. 技术栈（统一，不可混用）
+
+| 层 | 选型 |
+|---|---|
+| 后端运行时 | Python 3.13 + uv |
+| Web 框架 | FastAPI |
+| 校验/配置 | Pydantic v2 + pydantic-settings |
+| ORM / 迁移 | SQLAlchemy 2.0 async + Alembic |
+| 数据库 | PostgreSQL 17 + pgvector |
+| 缓存 / 队列 | Redis 8 + arq（Port 抽象，可换 Temporal） |
+| 对象存储 | MinIO（S3 兼容）|
+| HTTP / 日志 / 追踪 | httpx / structlog / OpenTelemetry |
+| 测试 | pytest + hypothesis + schemathesis |
+| Lint / 类型 | ruff + mypy --strict |
+| 前端 | React 19 + Vite 7 + TypeScript 5.9 |
+| 路由 / 数据 / 表单 | React Router 7 / TanStack Query v5 / TanStack Form + Zod v4 |
+| 样式 | Tailwind v4（仅布局） + AntD v5（组件）|
+| 状态 / 拖拽 / 表格 | Zustand v5 / dnd-kit / TanStack Table v8 |
+| 富文本 | Tiptap |
+| 前端 Lint / 类型 | Biome + tsc --strict |
+| 前端测试 | Vitest 3 + Playwright |
+| 编排 / 契约 | orval + datamodel-codegen |
+| 观测 / 部署 | OTel + Grafana + Loki / Docker + K8s + Traefik |
+
+**被淘汰的旧技术**：
+
+| 旧 | 原因 |
+|---|---|
+| Flask | 统一到 FastAPI |
+| SQLite | 统一到 PostgreSQL |
+| MySQL | 统一到 PostgreSQL（社区 follow/时间线需要）|
+| styled-components | 移除，改 AntD token + Tailwind 布局类 |
+| MUI | 移除（早已被 AntD 替换）|
+| react-quill | 已停维护 → Tiptap |
+| emoji-mart v3 | 与 v5 冲突 → 统一版本 |
+| antd-img-crop | 无人维护 → 自研 |
+| ESLint + Prettier | → Biome |
+| Celery | 太重 → arq（Port 抽象）|
+| valtio + Context 混用 | → Zustand v5 |
+
+---
+
+## 6. 路线图（24 周）
+
+| 阶段 | 内容 | 工期 | 轨 |
+|---|---|---|---|
+| **M0 地基** | `conventions` + `ui` + `contracts` + `core` + `cli` | 4 周 | 平台 |
+| **M1 样板** | `auth` + `llm` + `events` | 2 周 | 平台 |
+| **M2** | `orchestra` | 5 周 | 后端 + 前端 |
+| **M3** | `slides` + `slides-web` | 5 周 | 后端 + 前端 |
+| **M4** | `paper` | 4 周 | 后端 |
+| **M5** | `community` + `federation` + `billing` | 4 周 | 后端 |
+| **M6** | `web` + 网关 + worker + 观测 | 3 周 | 前端 + 平台 |
+| **M7** | 旧系统下线 + 数据迁移 + 收编 pdf-viewer | 2 周 | 平台 |
+
+详见 [10-迁移路线.md](./10-迁移路线.md)。
+
+---
+
+## 7. 关键决策速查
+
+| 决策 | 结论 | ADR |
+|---|---|---|
+| Monorepo vs Polyrepo | **Polyrepo**（每个子项目独立发布） | ADR-0001 |
+| 组件库 | **AntD v5 基座 + 自研 `packages/ui`（15%）** | ADR-0002 |
+| 样式系统 | Tailwind v4（布局）+ AntD（组件），禁 styled-components | ADR-0003 |
+| 后端框架 | **FastAPI**（统一） | ADR-0004 |
+| 数据库 | **PostgreSQL 17 + pgvector** | ADR-0005 |
+| 语言体系 | 界面语言 12 种 + 内容语言 20 种 + 运行时自定义 | ADR-0006 |
+| 主题机制 | AntD Token + 品牌配置 5 级来源 | ADR-0007 |
+| PPT 渲染 | 矢量式为主（python-pptx，可编辑），图像式可选 | ADR-0008 |
+| 编排包命名 | `orchestra` | ADR-0009 |
+| 社区路线 | 自研 + 对齐 Mastodon schema/API；联邦独立成包 | ADR-0010 |
+| 规范载体 | `packages/conventions/` 可执行配置 | ADR-0011 |
+| 脚手架 | TypeScript CLI（`pnpm dlx`） | ADR-0012 |
+| License 策略 | 全部重写不拷贝；CI license 门禁 | ADR-0013 |
+| 迁移方式 | 双轨并行 + 网关映射，按域灰度 | ADR-0014 |

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarspace.dev/schemas/brand.schema.json",
+  "title": "BrandConfig",
+  "description": "品牌主题配置契约 — 由 /api/v1/config/branding 下发，或构建期 VITE_BRAND_* 提供",
+
+  "type": "object",
+  "additionalProperties": false,
+
+  "required": ["colorPrimary"],
+
+  "properties": {
+    "colorPrimary": {
+      "type": "string",
+      "description": "品牌主色 → AntD token.colorPrimary。改这一个值全站生效。",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "examples": ["#611F6A", "#1D4ED8", "#047857"]
+    },
+
+    "colors": {
+      "type": "object",
+      "description": "语义色覆盖。不传则用 AntD 默认派生。",
+      "additionalProperties": false,
+      "properties": {
+        "success": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "warning": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "error":   { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "info":    { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    },
+
+    "borderRadius": {
+      "type": "number",
+      "description": "圆角基准 → token.borderRadius + 组件级结构",
+      "minimum": 0,
+      "maximum": 24,
+      "default": 6
+    },
+
+    "fontFamily": {
+      "type": "string",
+      "description": "字体族 → token.fontFamily",
+      "minLength": 1
+    },
+
+    "density": {
+      "type": "string",
+      "description": "布局密度 → 决定 algorithm 组合（compactAlgorithm）",
+      "enum": ["default", "compact"],
+      "default": "default"
+    },
+
+    "mode": {
+      "type": "string",
+      "description": "主题模式。auto 跟随系统。",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+
+    "brandName": {
+      "type": "string",
+      "description": "品牌名（展示用）",
+      "maxLength": 64
+    },
+
+    "logo": {
+      "type": "object",
+      "description": "Logo（明/暗两套）",
+      "additionalProperties": false,
+      "required": ["light", "dark"],
+      "properties": {
+        "light": { "type": "string", "format": "uri-reference" },
+        "dark":  { "type": "string", "format": "uri-reference" }
+      }
+    },
+
+    "favicon": {
+      "type": "string",
+      "format": "uri-reference"
+    }
+  },
+
+  "$defs": {
+    "UserPreferences": {
+      "title": "UserPreferences",
+      "description": "用户偏好 — 与品牌配置分离。模式/密度由用户控制，品牌色由机构控制。",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "enum": ["light", "dark", "auto"] },
+        "density": { "type": "string", "enum": ["default", "compact"] },
+        "locale": { "type": "string", "description": "界面语言" }
+      }
+    }
+  }
+}

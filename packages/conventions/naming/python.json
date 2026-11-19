@@ -1,0 +1,67 @@
+{
+  "$comment": "Python 命名规则 — 规范唯一来源。CI 护栏读取本文件做静态检查。",
+
+  "modules": {
+    "pattern": "^[a-z][a-z0-9_]*$",
+    "note": "snake_case，不与标准库冲突"
+  },
+
+  "classes": {
+    "pattern": "^[A-Z][A-Za-z0-9]*$",
+    "note": "PascalCase"
+  },
+
+  "functions": {
+    "pattern": "^_?[a-z][a-z0-9_]*$",
+    "note": "snake_case；私有前缀 _"
+  },
+
+  "variables": {
+    "pattern": "^_?[a-z][a-z0-9_]*$"
+  },
+
+  "constants": {
+    "pattern": "^[A-Z][A-Z0-9_]*$",
+    "note": "UPPER_SNAKE"
+  },
+
+  "exceptions": {
+    "suffix": "Error",
+    "note": "领域异常继承 AppError"
+  },
+
+  "ports": {
+    "suffix": "Port",
+    "note": "依赖倒置的 Protocol，如 LLMPort / AccountRepositoryPort"
+  },
+
+  "models": {
+    "suffixes": ["Model", "DTO", "Req", "Resp"],
+    "note": "边界模型：Pydantic Model / DTO / 请求 Req / 响应 Resp"
+  },
+
+  "useCases": {
+    "pattern": "^[a-z][a-z0-9_]*$",
+    "note": "动词开头，如 create_slide_project()"
+  },
+
+  "tests": {
+    "pattern": "^test_.*\\.py$",
+    "dirs": ["tests/unit", "tests/integration", "tests/contract"]
+  },
+
+  "layerDirs": {
+    "required": ["domain", "application", "infrastructure", "interfaces"],
+    "note": "每个 Python 子项目必须四层齐全（空的也要有 __init__.py）"
+  },
+
+  "domainFiles": {
+    "required": ["entities.py", "value_objects.py", "errors.py"]
+  },
+
+  "forbidden": {
+    "fileName": ["test_article_router.py", "test_sql_router.py"],
+    "pattern": "^test_.*_router\\.py$",
+    "note": "生产代码里不允许出现 test_* 文件"
+  }
+}

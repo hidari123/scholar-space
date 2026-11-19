@@ -1,0 +1,91 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+  "root": true,
+
+  "files": {
+    "includes": ["**", "!**/dist/**", "!**/node_modules/**", "!**/coverage/**", "!**/generated/**"]
+  },
+
+  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": true },
+
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf",
+    "attributePosition": "auto",
+    "bracketSpacing": true,
+    "expand": "auto",
+    "useEditorconfig": true
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+
+      "style": {
+        "recommended": true,
+        "useConst": "error",
+        "useImportType": "error",
+        "useExportType": "error",
+        "noNonNullAssertion": "error",
+        "useNamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false,
+            "conventions": {
+              "camelCase": {
+                "select": { "kind": "any" },
+                "ignore": ["PascalCase", "SCREAMING_SNAKE_CASE"]
+              }
+            }
+          }
+        }
+      },
+
+      "suspicious": {
+        "recommended": true,
+        "noExplicitAny": "error",
+        "noConsoleLog": { "level": "warn" },
+        "noArrayIndexKey": "error"
+      },
+
+      "complexity": {
+        "recommended": true,
+        "noExcessiveCognitiveComplexity": { "level": "error", "options": { "maxAllowedComplexity": 15 } }
+      },
+
+      "correctness": {
+        "recommended": true,
+        "useExhaustiveDependencies": "warn"
+      },
+
+      "performance": {
+        "recommended": true,
+        "noDelete": "off"
+      },
+
+      "security": {
+        "recommended": true
+      }
+    }
+  },
+
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "trailingCommas": "none"
+    }
+  }
+}

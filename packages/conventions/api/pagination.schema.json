@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarspace.dev/schemas/pagination.schema.json",
+  "title": "PageResult",
+  "description": "统一游标分页 — 不用 offset（深翻页会漂移）",
+
+  "type": "object",
+  "required": ["items", "has_more"],
+  "additionalProperties": false,
+
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "当前页数据"
+    },
+    "next_cursor": {
+      "type": ["string", "null"],
+      "description": "下一页游标。null = 没有下一页。",
+      "default": null
+    },
+    "has_more": {
+      "type": "boolean",
+      "description": "是否还有更多",
+      "default": false
+    },
+    "total": {
+      "type": ["integer", "null"],
+      "description": "总数（可选，游标分页下通常不返回）",
+      "default": null
+    }
+  },
+
+  "requestParameters": {
+    "cursor": {
+      "type": "string",
+      "description": "请求参数 — 上一页返回的 next_cursor",
+      "required": false
+    },
+    "limit": {
+      "type": "integer",
+      "description": "请求参数 — 每页条数",
+      "minimum": 1,
+      "maximum": 200,
+      "default": 20
+    }
+  },
+
+  "rules": {
+    "noOffsetPagination": true,
+    "cursorMustBeOpaque": true,
+    "cursorNote": "游标是不透明字符串，实现可自行编码，不要暴露内部 ID 排序规则"
+  }
+}

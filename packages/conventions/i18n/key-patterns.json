@@ -1,0 +1,67 @@
+{
+  "$comment": "文案 key 命名规则 — 规范唯一来源。CI 护栏 G13/G14/G15 读取本文件。",
+
+  "keyPattern": "^(auth|paper|slides|orchestra|community|billing|pdf|common|authz|workspace)\\.([a-zA-Z][a-zA-Z0-9]*)\\.(.+)$",
+
+  "domains": [
+    "auth",
+    "paper",
+    "slides",
+    "orchestra",
+    "community",
+    "billing",
+    "pdf",
+    "common",
+    "authz",
+    "workspace"
+  ],
+
+  "stateSuffixes": [
+    "error",
+    "loading",
+    "empty",
+    "success",
+    "hint",
+    "tooltip",
+    "label"
+  ],
+
+  "placeholderPattern": "\\{(\\w+)\\}",
+
+  "reservedPrefixes": [
+    "common.deprecated"
+  ],
+
+  "rules": {
+    "case": "段用 '.' 分隔，段内 camelCase，全小写开头",
+    "placeholders": "统一 {name} 格式；不用 %s / {{}} / <<>>",
+    "immutable": "key 一经发布不可重命名，只能废弃（迁移到 common.deprecated.<key>）",
+    "noHardcoded": "禁止在代码里写死用户可见文案（CI 护栏 G12）"
+  },
+
+  "coverage": {
+    "L1": {
+      "locales": ["zh-CN", "en-US"],
+      "requiredRatio": 1.0,
+      "enforced": true
+    },
+    "L2": {
+      "locales": [
+        "zh-TW", "zh-HK", "ja-JP", "ko-KR",
+        "fr-FR", "de-DE", "es-ES", "pt-BR", "ru-RU", "ar-EG"
+      ],
+      "requiredRatio": 0.8,
+      "enforced": false
+    }
+  },
+
+  "fallbackChain": [
+    "overrides[key]",
+    "locales[locale][key]",
+    "BUILTIN[locale][key]",
+    "BUILTIN['en-US'][key]",
+    "key"
+  ],
+
+  "fallbackNote": "最后兜底英文而非中文 —— 未配全的语言用中文会中英混杂，用英文至少语言一致。"
+}

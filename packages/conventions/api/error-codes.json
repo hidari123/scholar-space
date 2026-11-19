@@ -1,0 +1,41 @@
+{
+  "$comment": "错误码分段表 — 规范唯一来源。所有后端服务的 AppError.code 必须在此登记。",
+
+  "segments": {
+    "0": "成功",
+    "4xxxx": "客户端错误",
+    "5xxxx": "服务端错误",
+    "6xxxx": "业务错误"
+  },
+
+  "codes": {
+    "0": { "message": "ok", "httpStatus": 200 },
+
+    "40001": { "message": "参数错误", "httpStatus": 400 },
+    "40101": { "message": "未认证", "httpStatus": 401 },
+    "40301": { "message": "无权限", "httpStatus": 403 },
+    "40401": { "message": "资源不存在", "httpStatus": 404 },
+    "40402": { "message": "不支持的文件类型", "httpStatus": 404 },
+    "40901": { "message": "资源冲突", "httpStatus": 409 },
+    "42201": { "message": "参数校验失败", "httpStatus": 422 },
+    "42901": { "message": "请求过于频繁", "httpStatus": 429 },
+
+    "50001": { "message": "服务内部错误", "httpStatus": 500 },
+    "50201": { "message": "上游服务失败", "httpStatus": 502 },
+    "50301": { "message": "服务暂时不可用", "httpStatus": 503 },
+    "50401": { "message": "上游超时", "httpStatus": 504 },
+
+    "60001": { "message": "额度不足", "httpStatus": 402 },
+    "60002": { "message": "内容审核未通过", "httpStatus": 422 },
+    "60003": { "message": "任务状态冲突", "httpStatus": 409 },
+    "60004": { "message": "超出内容长度限制", "httpStatus": 422 },
+    "60005": { "message": "功能未启用", "httpStatus": 403 }
+  },
+
+  "rules": {
+    "codeMustBeRegistered": true,
+    "reservedForBusiness": "6xxxx 段由业务包自行分配，但需在本文件登记",
+    "messageShouldBeI18nKey": true,
+    "messageNote": "message 优先存 i18n key（如 common.error.network），前端负责本地化"
+  }
+}

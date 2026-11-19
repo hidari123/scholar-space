@@ -1,0 +1,48 @@
+{
+  "$comment": "5 套学术风格预设 — 规范唯一来源。packages/ui/src/theme/presets.ts 读取本文件生成代码。",
+
+  "presets": {
+    "scholar": {
+      "labelKey": "theme.preset.scholar",
+      "colorPrimary": "#611F6A",
+      "colorInfo": "#6389B5",
+      "description": "学术紫 — 沿用现有品牌色，稳重内敛"
+    },
+
+    "academic": {
+      "labelKey": "theme.preset.academic",
+      "colorPrimary": "#1D4ED8",
+      "colorInfo": "#0EA5E9",
+      "description": "学术蓝 — 正式、通用、国际期刊常见"
+    },
+
+    "emerald": {
+      "labelKey": "theme.preset.emerald",
+      "colorPrimary": "#047857",
+      "colorInfo": "#10B981",
+      "description": "墨绿 — Nature 期刊风格，护眼"
+    },
+
+    "graphite": {
+      "labelKey": "theme.preset.graphite",
+      "colorPrimary": "#334155",
+      "colorInfo": "#64748B",
+      "description": "石墨 — 极简中性，打印友好"
+    },
+
+    "lab": {
+      "labelKey": "theme.preset.lab",
+      "colorPrimary": "#EA580C",
+      "colorInfo": "#F59E0B",
+      "description": "实验室橙 — 活力，演示场景醒目"
+    }
+  },
+
+  "defaultPreset": "scholar",
+
+  "rules": {
+    "labelMustBeI18nKey": true,
+    "colorPrimaryMustBeHex6": true,
+    "allowedModes": ["light", "dark", "both"]
+  }
+}

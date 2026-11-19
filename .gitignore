@@ -1,0 +1,59 @@
+# ── Node ──────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+.next/
+dist/
+build/
+.turbo/
+
+# ── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+htmlcov/
+.coverage
+coverage.xml
+
+# ── 环境与密钥 ────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+*.secret
+secrets/
+
+# ── 本地数据 ──────────────────────────────────────────
+data/
+*.db
+*.sqlite
+*.sqlite3
+minio-data/
+postgres-data/
+redis-data/
+
+# ── 构建产物 ──────────────────────────────────────────
+*.pptx
+*.pdf
+*.docx
+*.xlsx
+output/
+exports/
+dist-docs/
+
+# ── 编辑器与系统 ──────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# ── 日志 ──────────────────────────────────────────────
+logs/
+*.log

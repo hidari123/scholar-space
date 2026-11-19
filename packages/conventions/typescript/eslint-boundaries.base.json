@@ -1,0 +1,44 @@
+{
+  "$comment": "目录边界 — 规范唯一来源：scholarspace/packages/conventions/typescript/eslint-boundaries.base.json",
+
+  "boundaries": [
+    {
+      "name": "G3-1 core 不得依赖 components / hooks / ui / react",
+      "from": { "path": "src/core/**" },
+      "disallow": [
+        { "path": "src/components/**" },
+        { "path": "src/hooks/**" },
+        { "path": "src/patterns/**" },
+        { "path": "src/layout/**" },
+        { "path": "node_modules/react/**" },
+        { "path": "node_modules/react-dom/**" },
+        { "path": "node_modules/@scholarspace/ui/**" }
+      ]
+    },
+    {
+      "name": "G3-2 core 不得依赖其他层",
+      "from": { "path": "src/core/**" },
+      "disallow": [{ "path": "src/**", "pattern": true }]
+    },
+    {
+      "name": "G4-1 跨包只走公开入口（禁止摸内部实现）",
+      "from": { "path": "src/**" },
+      "disallow": [
+        { "path": "node_modules/@scholarspace/*/dist/internal/**" },
+        { "path": "node_modules/@scholarspace/*/src/**" },
+        { "path": "node_modules/@scholarspace/*/dist/**/*/internal/**" }
+      ]
+    },
+    {
+      "name": "G7-1 业务代码不得直接 import antd",
+      "from": { "path": "src/**" },
+      "disallow": [{ "path": "node_modules/antd/**" }]
+    }
+  ],
+
+  "notes": [
+    "G3-2 用 pattern:true 表示 core 内任何跨目录引用都禁止（core 内部自引用除外，由工具处理）",
+    "G7-1 的例外：packages/ui/src/ 自身 —— 实现时用 ignore 配置",
+    "core 零 DOM 需另配 no-restricted-globals: document / window / localStorage"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "TypeScript 规范基座 — 规范唯一来源：scholarspace/packages/conventions/typescript/tsconfig.base.json",
+
+  "compilerOptions": {
+    /* ── 严格性 ───────────────────────────────────── */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    /* ── 模块 ─────────────────────────────────────── */
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* ── JSX ──────────────────────────────────────── */
+    "jsx": "react-jsx",
+
+    /* ── 输出 ─────────────────────────────────────── */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "importHelpers": false,
+
+    /* ── 路径别名（按包自行覆盖）──────────────────── */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    /* ── 互操作 ───────────────────────────────────── */
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true
+  },
+
+  "exclude": ["node_modules", "dist", "build", ".next", "coverage", "e2e"]
+}

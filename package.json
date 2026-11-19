@@ -1,0 +1,26 @@
+{
+  "name": "scholarspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "scholarspace — 平台级学术工作空间（组装主项目）",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "setup": "node scripts/dev-setup.mjs",
+    "lint": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" lint",
+    "typecheck": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" typecheck",
+    "test": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" test",
+    "guards": "pnpm --filter @scholarspace/cli guards run",
+    "i18n:check": "pnpm --filter @scholarspace/cli i18n check",
+    "contract:generate": "pnpm --filter @scholarspace/cli contract generate",
+    "contract:diff": "pnpm --filter @scholarspace/cli contract diff",
+    "build": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.4",
+    "typescript": "^5.9.3"
+  }
+}
