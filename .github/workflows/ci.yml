@@ -1,0 +1,152 @@
+name: ci
+
+# ⚠️ 主仓 CI —— 只跑共享底座的质量门禁。
+#    12 个独立子仓各有自己的 CI（见 .github/workflows/subrepo-ci.yml 模板）。
+#
+# 主仓挂了不阻塞子仓开发；子仓挂了不阻塞主仓。
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22.13.0'
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  # ══════════════════════════════════════════════════════
+  # 护栏 —— 架构规则（最快，先跑）
+  # ══════════════════════════════════════════════════════
+  guards:
+    name: 架构护栏
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 构建护栏工具
+        run: pnpm --filter @scholarspace/guards build
+
+      - name: 跑护栏
+        run: node tools/guards/dist/cli.js run
+
+  # ══════════════════════════════════════════════════════
+  # TypeScript —— 共享底座（ui / codegen / cli / guards）
+  # ══════════════════════════════════════════════════════
+  typescript:
+    name: TypeScript 门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: typecheck + lint + test + build
+        run: |
+          pnpm --filter @scholarspace/ui verify
+          pnpm --filter @scholarspace/codegen verify
+          pnpm --filter @scholarspace/cli verify
+          pnpm --filter @scholarspace/guards verify
+
+  # ══════════════════════════════════════════════════════
+  # Python —— 共享底座（core）
+  # ══════════════════════════════════════════════════════
+  python:
+    name: Python 门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 安装 Python 3.13
+        run: uv python install 3.13
+
+      - name: 质量门禁
+        working-directory: packages/core
+        run: |
+          uv venv --python 3.13
+          uv pip install -e . --no-deps
+          uv pip install pydantic pydantic-settings structlog \
+            pytest pytest-asyncio pytest-cov ruff mypy import-linter
+          .venv/bin/ruff check src/ tests/
+          .venv/bin/ruff format --check src/ tests/
+          .venv/bin/mypy src/
+          .venv/bin/import-linter lint
+          .venv/bin/python -m pytest tests/ -q --cov=scholar_core
+
+  # ══════════════════════════════════════════════════════
+  # 契约 —— OpenAPI 校验
+  # ══════════════════════════════════════════════════════
+  contracts:
+    name: 契约校验
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 构建 codegen
+        run: pnpm --filter @scholarspace/codegen build
+
+      - name: 校验契约
+        run: node tools/codegen/dist/cli.js validate
+
+  # ══════════════════════════════════════════════════════
+  # 发布前检查
+  # ══════════════════════════════════════════════════════
+  release-check:
+    name: 发布前检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 构建 codegen
+        run: pnpm --filter @scholarspace/codegen build
+
+      - name: 检查发布配置
+        run: node tools/codegen/dist/cli.js release-check

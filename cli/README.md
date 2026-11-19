@@ -21,12 +21,12 @@ my-service/tsconfig.base.json
 
 ## 命令
 
-| 命令 | 说明 |
-|---|---|
-| `new <name> --template <id>` | 创建新项目（含规范基座同步）|
-| `sync --kind python\|typescript` | 同步规范基座到目标仓 |
-| `check --target <dir>` | 检查 extends 引用是否失效 |
-| `list` | 列出可用模板 |
+| 命令                             | 说明                         |
+| -------------------------------- | ---------------------------- |
+| `new <name> --template <id>`     | 创建新项目（含规范基座同步） |
+| `sync --kind python\|typescript` | 同步规范基座到目标仓         |
+| `check --target <dir>`           | 检查 extends 引用是否失效    |
+| `list`                           | 列出可用模板                 |
 
 ---
 
@@ -72,21 +72,21 @@ npx @scholarspace/cli check --target ../scholarspace-paper
 
 子仓的 CI 是**独立 checkout** 的，仓库里没有 `../../packages/conventions/`。
 
-| 工具 | 相对路径 extends 在子仓 CI 里 |
-|---|---|
-| ruff | ❌ 直接报错（可见）|
-| mypy | ❌ 报 "Unrecognized option"（可见）|
-| **biome** | ⚠️ **静默失效**（不可见！）|
+| 工具      | 相对路径 extends 在子仓 CI 里       |
+| --------- | ----------------------------------- |
+| ruff      | ❌ 直接报错（可见）                 |
+| mypy      | ❌ 报 "Unrecognized option"（可见） |
+| **biome** | ⚠️ **静默失效**（不可见！）         |
 
 biome 那个最危险 —— 规则全没了，CI 还是绿的。
 所以复制是**唯一可靠**的方案。
 
-| 工具 | 复制后的引用方式 |
-|---|---|
-| ruff | `pyproject.toml` → `extend = "./ruff.toml"` |
-| mypy | `mypy.ini`（mypy 无继承机制，只能整份复制）|
+| 工具     | 复制后的引用方式                                      |
+| -------- | ----------------------------------------------------- |
+| ruff     | `pyproject.toml` → `extend = "./ruff.toml"`           |
+| mypy     | `mypy.ini`（mypy 无继承机制，只能整份复制）           |
 | tsconfig | `tsconfig.json` → `"extends": "./tsconfig.base.json"` |
-| biome | `biome.json` → `"extends": ["./biome.base.json"]` |
+| biome    | `biome.json` → `"extends": ["./biome.base.json"]`     |
 
 ---
 

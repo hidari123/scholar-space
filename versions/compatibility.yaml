@@ -1,0 +1,133 @@
+# scholarspace 版本兼容矩阵
+#
+# ⚠️ 这是 polyrepo 的**版本漂移防线**。
+#    契约在主仓，代码在各独立仓 —— 没有这张表，版本就会各跑各的。
+#
+# 校验方式：
+#   ① CI 跑 `guards run` 检查依赖声明是否落在声明的版本区间内
+#   ② 发版前跑 `openapi-diff` 确认契约变更是否破坏兼容
+#   ③ 合并请求里若依赖版本越界 → CI 阻断
+#
+# 规则：
+#   min_consumer_version  —— 消费方最低可用版本
+#   min_provider_version  —— 提供方最低兼容版本
+#   max_provider_version  —— 提供方最高兼容版本（超出即视为破坏性变更）
+
+version: 1
+updated: '2026-11-19'
+
+# ── 共享底座（主仓发布，独立仓消费）───────────────────
+shared:
+  ui:
+    package: '@scholarspace/ui'
+    registry: npm.pkg.github.com
+    current: 0.1.0
+    # 破坏性变更需要主版本号 +1
+    breaking_change_policy: major
+  core:
+    package: scholarspace-core
+    registry: pypi.pkg.github.com
+    current: 0.1.0
+    breaking_change_policy: major
+
+# ── 契约 ────────────────────────────────────────────
+contracts:
+  common:
+    path: contracts/openapi/common.yaml
+    version: 1.0.0
+  core:
+    path: contracts/openapi/core.yaml
+    version: 1.0.0
+
+# ── 消费方 → 提供方 ─────────────────────────────────
+matrix:
+  # 共享底座
+  - consumer: web
+    provider: ui
+    contract: ui/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: slides-web
+    provider: ui
+    contract: ui/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: orchestra-web
+    provider: ui
+    contract: ui/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: community-web
+    provider: ui
+    contract: ui/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: pdf-viewer
+    provider: ui
+    contract: ui/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  # Python 共享底座
+  - consumer: auth
+    provider: core
+    contract: core/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: llm
+    provider: core
+    contract: core/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: paper
+    provider: core
+    contract: core/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: slides
+    provider: core
+    contract: core/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: orchestra
+    provider: core
+    contract: core/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  - consumer: community
+    provider: core
+    contract: core/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+# ── 禁止的跨包依赖（CI G 强制）──────────────────────
+forbidden_dependencies:
+  slides:
+    - paper
+    - community
+    - orchestra
+  orchestra:
+    - slides
+    - community
+  community:
+    - paper

@@ -8,11 +8,9 @@
   "engines": {
     "node": ">=22.13.0"
   },
-
   "bin": {
     "scholarspace-cli": "./dist/cli.js"
   },
-
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
@@ -20,14 +18,14 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "test": "vitest run",
-    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build"
+    "verify": "npm-run-all --sequential typecheck lint test build"
   },
-
   "devDependencies": {
     "@biomejs/biome": "^2.6.4",
     "@types/node": "^24.10.1",
     "tsup": "^9.0.0",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "npm-run-all": "^4.1.5"
   }
 }

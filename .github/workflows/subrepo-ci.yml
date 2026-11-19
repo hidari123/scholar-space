@@ -1,0 +1,200 @@
+name: ci
+
+# ⚠️ 子仓 CI 模板 —— 复制到 12 个独立子仓。
+#
+# ⚠️⚠️ 关键：**不依赖主仓在场**。
+#    规范基座由 `cli sync` 复制进本仓（ruff.toml / mypy.ini / tsconfig.base.json），
+#    所以 CI 只需要 checkout 本仓即可。
+#
+# 用法：
+#   1. 复制本文件到 <subrepo>/.github/workflows/ci.yml
+#   2. 按注释调整 package.json 的 scripts
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22.13.0'
+  PYTHON_VERSION: '3.13'
+  # ⚠️ GitHub Packages 的认证
+  #    NPM_TOKEN / PIP_TOKEN 由仓库 secrets 提供
+
+jobs:
+  # ══════════════════════════════════════════════════════
+  # 护栏 —— 本仓的架构规则
+  # ══════════════════════════════════════════════════════
+  guards:
+    name: 架构护栏
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      # ⚠️ 护栏工具从主仓拉 —— 或把它做成 npm 包发布
+      #    过渡期：clone 主仓到固定位置
+      - name: 拉取护栏工具
+        run: |
+          git clone --depth 1 https://github.com/hidari123/scholar-space.git /tmp/scholar-space
+          cd /tmp/scholar-space
+          pnpm install --frozen-lockfile
+          pnpm --filter @scholarspace/guards build
+          cp -r tools/guards/dist $GITHUB_WORKSPACE/tools-guards
+
+      - name: 跑护栏
+        run: node tools-guards/cli.js run
+
+  # ══════════════════════════════════════════════════════
+  # Python 门禁
+  # ══════════════════════════════════════════════════════
+  python:
+    name: Python 门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 安装 Python 3.13
+        run: uv python install 3.13
+
+      - name: 质量门禁
+        run: |
+          uv venv --python 3.13
+          uv pip install -e ".[dev]" --no-deps
+          uv pip install pydantic pydantic-settings structlog \
+            pytest pytest-asyncio pytest-cov ruff mypy import-linter
+          .venv/bin/ruff check src/ tests/
+          .venv/bin/ruff format --check src/ tests/
+          .venv/bin/mypy src/
+          .venv/bin/import-linter lint
+          .venv/bin/python -m pytest tests/ -q --cov=.
+
+  # ══════════════════════════════════════════════════════
+  # TypeScript 门禁
+  # ══════════════════════════════════════════════════════
+  typescript:
+    name: TypeScript 门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: 配置 GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+          echo "registry=https://npm.pkg.github.com" >> .npmrc
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: typecheck + lint + test + build
+        run: |
+          pnpm run typecheck
+          pnpm run lint
+          pnpm run test
+          pnpm run build
+
+      - name: 构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  # ══════════════════════════════════════════════════════
+  # 发布 —— 发到 GitHub Packages
+  # ══════════════════════════════════════════════════════
+  release:
+    name: 发布
+    needs: [guards]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write    # ⚠️ 发布到 Packages 必需
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          registry-url: 'https://npm.pkg.github.com'
+
+      - name: 配置 GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+          echo "registry=https://npm.pkg.github.com" >> .npmrc
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 校验 tag 与 package.json 版本一致
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "❌ tag 版本 ($TAG_VERSION) 与 package.json ($PKG_VERSION) 不一致"
+            exit 1
+          fi
+
+      - name: 构建
+        run: pnpm run build
+
+      - name: 发布到 GitHub Packages
+        run: pnpm publish --no-git-checks --access restricted
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ══════════════════════════════════════════════════════
+  # Python 发布
+  # ══════════════════════════════════════════════════════
+  release-python:
+    name: 发布 Python 包
+    needs: [guards]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 安装 Python 3.13
+        run: uv python install 3.13
+
+      - name: 构建
+        run: uv build
+
+      - name: 发布到 GitHub Packages
+        run: |
+          uv publish \
+            --index https://pypi.pkg.github.com/scholarspace \
+            --trusted-publishing always
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PIP_TOKEN }}
