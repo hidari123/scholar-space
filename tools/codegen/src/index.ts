@@ -1,11 +1,11 @@
-export { ContractBundle, toYaml, parseRef } from './loader';
 export type { ContractDocument } from './loader';
-export { validateContracts, collectRefs } from './validator';
-export type { ValidationResult } from './validator';
+export { ContractBundle, parseRef, toYaml } from './loader';
 export {
-  findProjectRoot,
-  contractsDir,
-  openapiDir,
-  conventionsDir,
   compatibilityFile,
+  contractsDir,
+  conventionsDir,
+  findProjectRoot,
+  openapiDir,
 } from './paths';
+export type { ValidationResult } from './validator';
+export { collectRefs, validateContracts } from './validator';

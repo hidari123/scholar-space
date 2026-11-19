@@ -5,7 +5,7 @@
  * 必须能解析，否则 codegen 无法工作。
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { parse, stringify } from 'yaml';
 

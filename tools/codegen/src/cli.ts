@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * codegen CLI —— 契约工具入口。
  *
@@ -6,6 +5,8 @@
  *   validate   校验契约（G5 / G6）
  *   snapshot   导出扁平化契约快照（用于 diff）
  *   list       列出已加载的契约
+ *
+ * ⚠️ shebang 由 tsup 的 banner 注入，这里不要重复写。
  */
 
 import { ContractBundle, toYaml } from './loader';

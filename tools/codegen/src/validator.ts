@@ -6,7 +6,7 @@
  *   G6  路径版本规范、错误码已登记、分页参数符合规范
  */
 
-import { ContractBundle } from './loader';
+import type { ContractBundle } from './loader';
 
 /** 校验结果。 */
 export interface ValidationResult {
@@ -27,6 +27,9 @@ export interface ValidationResult {
 /** 允许的 API 版本前缀。 */
 const ALLOWED_API_VERSIONS = ['/api/v1'];
 
+/** 有效的 HTTP 方法。 */
+const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
+
 /**
  * 校验契约集合。
  */
@@ -38,55 +41,9 @@ export function validateContracts(bundle: ContractBundle): ValidationResult {
   let schemaCount = 0;
 
   for (const { name, doc } of bundle.all()) {
-    // ── G5：$ref 可解析 ───────────────────────────────
-    const refs = collectRefs(doc);
-    for (const ref of refs) {
-      const resolved = bundle.resolve(name, ref);
-      if (resolved === undefined) {
-        errors.push(`${name}: 无法解析 $ref "${ref}"`);
-      }
-    }
-
-    // ── G5：operationId 唯一 ─────────────────────────
-    const paths = (doc.paths ?? {}) as Record<string, Record<string, unknown>>;
-    for (const [path, methods] of Object.entries(paths)) {
-      // ── G6：路径版本规范 ─────────────────────────────
-      if (!ALLOWED_API_VERSIONS.some((version) => path.startsWith(version))) {
-        errors.push(`${name}: 路径 "${path}" 必须以 ${ALLOWED_API_VERSIONS.join(' / ')} 开头`);
-      }
-
-      for (const [method, operation] of Object.entries(methods)) {
-        if (!['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method)) {
-          continue;
-        }
-
-        operationCount += 1;
-        const op = operation as Record<string, unknown>;
-        const operationId = op.operationId;
-
-        if (typeof operationId !== 'string' || operationId.length === 0) {
-          errors.push(`${name}: ${method.toUpperCase()} ${path} 缺少 operationId`);
-          continue;
-        }
-
-        if (operationIds.has(operationId)) {
-          errors.push(`${name}: operationId "${operationId}" 重复`);
-        }
-        operationIds.add(operationId);
-
-        if (!op.summary) {
-          warnings.push(`${name}: ${method.toUpperCase()} ${path} 缺少 summary`);
-        }
-        if (!op.responses || typeof op.responses !== 'object') {
-          errors.push(`${name}: ${method.toUpperCase()} ${path} 缺少 responses`);
-        }
-      }
-    }
-
-    // ── G5：schema 计数 ───────────────────────────────
-    const components = (doc.components ?? {}) as Record<string, unknown>;
-    const schemas = (components.schemas ?? {}) as Record<string, unknown>;
-    schemaCount += Object.keys(schemas).length;
+    errors.push(...validateRefs(name, doc, bundle));
+    schemaCount += countSchemas(doc);
+    operationCount += validatePaths(name, doc, operationIds, errors, warnings);
   }
 
   return {
@@ -95,6 +52,92 @@ export function validateContracts(bundle: ContractBundle): ValidationResult {
     warnings,
     stats: { files: bundle.all().length, operations: operationCount, schemas: schemaCount },
   };
+}
+
+/** G5：所有 $ref 必须可解析。 */
+function validateRefs(name: string, doc: unknown, bundle: ContractBundle): string[] {
+  const errors: string[] = [];
+
+  for (const ref of collectRefs(doc)) {
+    if (bundle.resolve(name, ref) === undefined) {
+      errors.push(`${name}: 无法解析 $ref "${ref}"`);
+    }
+  }
+
+  return errors;
+}
+
+/** 统计 schema 数量。 */
+function countSchemas(doc: unknown): number {
+  const components = (doc as { components?: unknown }).components ?? {};
+  const schemas = (components as { schemas?: unknown }).schemas ?? {};
+  return Object.keys(schemas as Record<string, unknown>).length;
+}
+
+/**
+ * G5 / G6：校验路径与操作。
+ *
+ * @returns 端点数量
+ */
+function validatePaths(
+  name: string,
+  doc: unknown,
+  operationIds: Set<string>,
+  errors: string[],
+  warnings: string[],
+): number {
+  const paths = ((doc as { paths?: unknown }).paths ?? {}) as Record<
+    string,
+    Record<string, unknown>
+  >;
+  let operationCount = 0;
+
+  for (const [path, methods] of Object.entries(paths)) {
+    if (!ALLOWED_API_VERSIONS.some((version) => path.startsWith(version))) {
+      errors.push(`${name}: 路径 "${path}" 必须以 ${ALLOWED_API_VERSIONS.join(' / ')} 开头`);
+    }
+
+    for (const [method, operation] of Object.entries(methods)) {
+      if (!HTTP_METHODS.includes(method)) continue;
+
+      operationCount += 1;
+      validateOperation(name, method, path, operation, operationIds, errors, warnings);
+    }
+  }
+
+  return operationCount;
+}
+
+/** G5：校验单个操作。 */
+function validateOperation(
+  name: string,
+  method: string,
+  path: string,
+  operation: unknown,
+  operationIds: Set<string>,
+  errors: string[],
+  warnings: string[],
+): void {
+  const op = operation as Record<string, unknown>;
+  const label = `${method.toUpperCase()} ${path}`;
+  const operationId = op.operationId;
+
+  if (typeof operationId !== 'string' || operationId.length === 0) {
+    errors.push(`${name}: ${label} 缺少 operationId`);
+    return;
+  }
+
+  if (operationIds.has(operationId)) {
+    errors.push(`${name}: operationId "${operationId}" 重复`);
+  }
+  operationIds.add(operationId);
+
+  if (!op.summary) {
+    warnings.push(`${name}: ${label} 缺少 summary`);
+  }
+  if (!op.responses || typeof op.responses !== 'object') {
+    errors.push(`${name}: ${label} 缺少 responses`);
+  }
 }
 
 /**
