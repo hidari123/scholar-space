@@ -22,10 +22,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
 
       "style": {
-        "recommended": true,
+        "preset": "recommended",
         "useConst": "error",
         "useImportType": "error",
         "useExportType": "error",
@@ -33,27 +33,30 @@
       },
 
       "suspicious": {
-        "recommended": true,
+        "preset": "recommended",
         "noExplicitAny": "error",
         "noConsole": { "level": "warn" },
         "noArrayIndexKey": "error"
       },
       "complexity": {
-        "recommended": true,
-        "noExcessiveCognitiveComplexity": { "level": "error", "options": { "maxAllowedComplexity": 15 } }
+        "preset": "recommended",
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": { "maxAllowedComplexity": 15 }
+        }
       },
 
       "correctness": {
-        "recommended": true,
+        "preset": "recommended",
         "useExhaustiveDependencies": "warn"
       },
 
       "performance": {
-        "recommended": true
+        "preset": "recommended"
       },
 
       "security": {
-        "recommended": true
+        "preset": "recommended"
       }
     }
   },
