@@ -29,6 +29,15 @@ shared:
     registry: pypi.pkg.github.com
     current: 0.1.0
     breaking_change_policy: major
+  # ⚠️ identity-ui 在**独立仓**（scholarspace-identity）——
+  #    不从主仓发布，独立仓自己管理版本。
+  #    它的消费者也都在独立仓里。
+  identity-ui:
+    package: '@scholarspace/identity-ui'
+    registry: local
+    repo: scholarspace-identity
+    current: 0.1.0
+    breaking_change_policy: major
 
 # ── 契约 ────────────────────────────────────────────
 contracts:
@@ -38,6 +47,32 @@ contracts:
   core:
     path: contracts/openapi/core.yaml
     version: 1.0.0
+
+# ── B 类服务（主仓内）────────────────────────────────
+# ⚠️ 这些不是「共享底座」—— 它们是主仓内的基础服务，
+#    不发布到 registry，只在主仓内部被引用。
+#    但仍然记版本 —— 改坏了要能定位。
+services:
+  auth:
+    package: scholarspace-auth
+    path: packages/services/auth
+    current: 0.1.0
+    # ⚠️ 领域层零外部依赖 —— 可独立复用
+    domain_isolation: true
+    layers:
+      domain: src/scholar_auth/domain
+      application: src/scholar_auth/application
+      infrastructure: src/scholar_auth/infrastructure
+      interfaces: src/scholar_auth/interfaces
+  llm:
+    package: scholarspace-llm
+    path: packages/services/llm
+    current: 0.1.0
+    domain_isolation: true
+    layers:
+      domain: src/scholar_llm/domain
+      application: src/scholar_llm/application
+      infrastructure: src/scholar_llm/infrastructure
 
 # ── 消费方 → 提供方 ─────────────────────────────────
 matrix:
@@ -71,6 +106,14 @@ matrix:
     max_provider_version: 0.x
 
   - consumer: pdf-viewer
+    provider: ui
+    contract: ui/v1
+    min_consumer_version: 0.1.0
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+
+  # ⚠️ identity-ui 在独立仓 —— 它消费主仓的 ui
+  - consumer: identity-ui
     provider: ui
     contract: ui/v1
     min_consumer_version: 0.1.0
@@ -144,3 +187,8 @@ forbidden_dependencies:
   #    只通过 UserRegistered 事件与 user_id 关联
   auth:
     - identity
+  # ⚠️ auth 不依赖 llm —— 权限判断不需要 LLM。
+  #    （将来做「AI 辅助审核」时也不该直接依赖，
+  #      应该走事件 + 编排层。）
+  auth:
+    - llm

@@ -10,7 +10,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { extname, join, relative, resolve } from 'node:path';
+import { dirname, extname, join, relative, resolve } from 'node:path';
 
 /** 严重级别。 */
 export type Severity = 'error' | 'warn';
@@ -588,8 +588,122 @@ function checkBaseCopy(root: string, file: string): string | null {
   return `${relPath}: 与 ${entry.source} 不一致 —— ` + `请跑 \`cli sync --kind ${kind}\``;
 }
 
+// ══════════════════════════════════════════════════════════
+// G26 —— 新建包必须带齐「必需文件」
+// ══════════════════════════════════════════════════════════
+/**
+ * 各语言类型的必需文件。
+ *
+ * ⚠️ **每一条都对应一个实测踩过的坑**：
+ *
+ *   · `biome.json` —— 缺了 Biome 退回默认（tab 缩进），
+ *     与 conventions 的 space×2 冲突 → lint 一堆格式错
+ *   · `py.typed` —— 缺了下游包 mypy 报 `import-untyped`
+ *   · `mypy.ini` —— mypy **没有配置继承**，必须本地有一份
+ */
+const REQUIRED_FILES: Array<{
+  /** 判定这个包是不是该类型的依据文件。 */
+  marker: string;
+  /** 标记文件所在目录要有的文件。 */
+  required: string[];
+  /** 类型说明。 */
+  kind: string;
+}> = [
+  {
+    marker: 'package.json',
+    required: ['biome.json', 'tsconfig.json'],
+    kind: 'TypeScript 包',
+  },
+  {
+    marker: 'pyproject.toml',
+    required: ['py.typed'],
+    kind: 'Python 包',
+  },
+];
+
+/**
+ * 找某个必需文件的所有可能位置。
+ *
+ * ⚠️ `py.typed` 的位置很特殊 —— 它在 `src/<包名>/py.typed`，
+ * 不是包根。所以要**遍历 src 下的一级子目录**。
+ */
+function findRequiredFileCandidates(packageDir: string, required: string): string[] {
+  const candidates = [join(packageDir, required), join(packageDir, 'src', required)];
+
+  if (required !== 'py.typed') return candidates;
+
+  const srcDir = join(packageDir, 'src');
+  if (!existsSync(srcDir)) return candidates;
+
+  for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      candidates.push(join(srcDir, entry.name, 'py.typed'));
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * 检查单个包是否缺必需文件。
+ *
+ * @returns 违规说明；齐全则返回 null
+ */
+function checkPackageRequiredFiles(
+  root: string,
+  packageDir: string,
+  rule: (typeof REQUIRED_FILES)[number],
+): string | null {
+  const relPackage = relative(root, packageDir).replace(/\\/g, '/');
+
+  // ⚠️ 排除「配置源」目录本身 —— packages/conventions 是模板不是包
+  if (relPackage.includes('conventions')) return null;
+
+  for (const required of rule.required) {
+    const candidates = findRequiredFileCandidates(packageDir, required);
+    if (candidates.some((candidate) => existsSync(candidate))) continue;
+
+    // ⚠️ 报错要说明「缺了会怎样」—— 只说「缺文件」没人知道影响
+    const impact =
+      required === 'biome.json'
+        ? 'lint 缩进规则会退回 Biome 默认'
+        : '下游包 mypy 会报 import-untyped';
+
+    return `${relPackage}: ${rule.kind}缺少 ${required} —— 没有它，${impact}`;
+  }
+
+  return null;
+}
+
+const g26: Guard = {
+  id: 'G26',
+  name: '新建包必需文件齐全',
+  description: 'TS 包要有 biome.json，Python 包要有 py.typed（否则 lint/类型检查静默失效）',
+  severity: 'error',
+  scope: 'packages',
+  run(root) {
+    const violations: string[] = [];
+
+    for (const dir of BASE_SYNC_DIRS) {
+      const base = join(root, dir);
+      if (!existsSync(base)) continue;
+
+      for (const file of walkFiles(base, ['.json', '.toml'])) {
+        const name = file.split('\\').pop() ?? file;
+        const rule = REQUIRED_FILES.find((item) => item.marker === name);
+        if (!rule) continue;
+
+        const violation = checkPackageRequiredFiles(root, dirname(file), rule);
+        if (violation) violations.push(violation);
+      }
+    }
+
+    return violations;
+  },
+};
+
 /** 全部护栏。 */
-export const GUARDS: Guard[] = [g7, g11, g13, g16, g17, g21, g23, g24, g25];
+export const GUARDS: Guard[] = [g7, g11, g13, g16, g17, g21, g23, g24, g25, g26];
 
 /**
  * 执行全部护栏。

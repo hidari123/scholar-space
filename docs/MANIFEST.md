@@ -14,7 +14,7 @@
 | [03-语言体系.md](./03-语言体系.md) | 界面语言 12 种 + 内容语言 20 种 + 自定义语言 | ④ |
 | [04-主题与设计系统.md](./04-主题与设计系统.md) | 品牌主题五层模型、AntD 集成、样式系统、复合组件 | ⑤ |
 | [05-代码规范.md](./05-代码规范.md) | Python / TypeScript / API / DB / Git / 安全规范 | ⑥ |
-| [06-架构护栏.md](./06-架构护栏.md) | 23 条 CI 护栏（G1-G23）| ⑦ |
+| [06-架构护栏.md](./06-架构护栏.md) | 26 条 CI 护栏（G1-G26）| ⑦ |
 | [07-orchestra.md](./07-orchestra.md) | 编排引擎完整设计 | ⑧ |
 | [08-slides.md](./08-slides.md) | PPT 引擎完整设计 | ⑨ |
 | [09-脚手架.md](./09-脚手架.md) | `scholarspace-cli` 设计 | ⑩ |
@@ -38,6 +38,10 @@
 | [adr/0012-scaffold-cli.md](./adr/0012-scaffold-cli.md) | 脚手架以 TypeScript CLI 实现 |
 | [adr/0013-license-compliance.md](./adr/0013-license-compliance.md) | License 合规策略（AGPL 隔离）|
 | [adr/0014-migration-strategy.md](./adr/0014-migration-strategy.md) | 双轨并行迁移策略 |
+| [adr/0015-shared-base-publishing.md](./adr/0015-shared-base-publishing.md) | 共享底座发布策略 |
+| [adr/0016-repo-layout-and-identity.md](./adr/0016-repo-layout-and-identity.md) | 仓库布局：4+1+1 + identity 独立 |
+| [adr/0017-admin-system.md](./adr/0017-admin-system.md) | 管理员体系设计 |
+| [adr/0018-g1-gate-review.md](./adr/0018-g1-gate-review.md) | **G1 闸门评审**：规范可用性评估 |
 
 ---
 
@@ -57,8 +61,8 @@
 
 | # | 问题 | 建议 | 文档位置 |
 |---|---|---|---|
-| 1 | 界面语言 12 种是否够 | 覆盖科研产出 TOP + 华人圈三地 + 1 个 RTL | 03 |
-| 2 | 内容语言 20 种 | 比界面更广（面向全球学术读者）| 03 |
+| 1 | 界面语言 12 种是否够 | ✅ **已落地**：12 种（`packages/ui` + `identity-ui` 各实现一遍）| 03 |
+| 2 | 内容语言 20 种 | ✅ **已落地**：21 种（20 + `auto`），见 `packages/services/llm` | 03 |
 | 3 | 自定义语言分发方式 | 运行时 JSON + `/api/v1/i18n/locales/{locale}` | 03 |
 | 4 | RTL 实现深度 | 架构预留 + `ar-EG` 验证，不做全量翻译 | 03 |
 | 5 | 品牌色 vs 用户偏好优先级 | 模式=用户，色=机构，二者分离 | 04 / ADR-0007 |
@@ -67,9 +71,9 @@
 | 8 | 富文本方案 | Tiptap（替 react-quill）| 02 |
 | 9 | 头像裁剪 | 自研（替 antd-img-crop）| 02 |
 | 10 | 任务队列 | arq（Port 抽象，可换 Temporal）| 02 |
-| 11 | PPT 渲染路线 | 矢量式为主，图像式可选 | ADR-0008 |
+| 11 | PPT 渲染路线 | ⏳ **待定** —— ADR-0008 说「矢量式为主」，M3 做之前要你确认 | ADR-0008 |
 | 12 | 社区路线 | 自研 + 对齐 Mastodon API，联邦 P2 | ADR-0010 |
-| 13 | 社区数据是否迁移 | 建议不迁（从零开始）| ADR-0010 |
+| 13 | 社区数据是否迁移 | ⏳ **待定** —— 建议不迁（从零开始），M5 做之前要你确认 | ADR-0010 |
 | 14 | 脚手架语言 | TypeScript CLI | ADR-0012 |
 | 15 | 旧系统下线节点 | M7（明确节点，防双轨长期化）| ADR-0014 |
 | 16 | 电商/社群等商业化功能 | 本期不做 | 10 |
@@ -84,11 +88,13 @@
 
 按依赖顺序，建议：
 
-| 序 | 动作 | 前置 |
-|---|---|---|
-| 1 | 确认本套文档中的待确认项 | — |
-| 2 | 建 `scholarspace` 主项目骨架 + `packages/conventions/` | 确认 |
-| 3 | 建 `packages/ui`（AntD 基座 + 品牌主题 + i18n）| 2 |
-| 4 | 建 `cli` 脚手架（`new` + `guards run` + `i18n check`）| 2 |
-| 5 | 建 `contracts/` + codegen | 2 |
-| 6 | 第一个样板子项目（`auth`）验证规范 | 3 4 5 |
+| 序 | 动作 | 前置 | 状态 |
+|---|---|---|---|
+| 1 | 确认本套文档中的待确认项 | — | ✅ 17-20 已确认，1-16 见上表 |
+| 2 | 建 `scholarspace` 主项目骨架 + `packages/conventions/` | 确认 | ✅ |
+| 3 | 建 `packages/ui`（AntD 基座 + 品牌主题 + i18n）| 2 | ✅ |
+| 4 | 建 `cli` 脚手架（`new` + `guards run` + `i18n check`）| 2 | ✅ |
+| 5 | 建 `contracts/` + codegen | 2 | 🔄 骨架有，契约未打通（M6）|
+| 6 | 第一个样板子项目（`auth`）验证规范 | 3 4 5 | ✅ |
+| 7 | **G1 闸门评审** —— 规范可用性评估 | 6 | ✅ **已通过**（ADR-0018）|
+| 8 | 进入 M2（orchestra）| 7 | 🔄 |
