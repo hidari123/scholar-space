@@ -5,6 +5,21 @@
 
 ---
 
+> **✅ 实现状态（2026-11-19）**：
+>
+> | 部分 | 状态 | 位置 |
+> |---|---|---|
+> | 领域模型 + DAG 校验 | ✅ | `scholarspace-orchestra/libs/orchestra-core` |
+> | DAG 调度器 | ✅ | `scholarspace-orchestra/libs/orchestra-runtime` |
+> | 节点注册表（插件机制） | ✅ | 同上 `registry.py` |
+> | 内置节点（P0：llm/tool/branch/merge） | ✅ | 同上 `builtin_nodes.py` |
+> | HTTP 层 + SSE | ⬜ | M2-③ |
+> | 学术专用节点 | ⬜ | M3+（依赖 paper/slides 仓）|
+>
+> 已实现的坑见 `docs/00-项目地图.md` 附录。
+
+---
+
 ## 1. 定位与边界
 
 ### 1.1 是什么
