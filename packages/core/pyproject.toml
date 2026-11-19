@@ -9,6 +9,11 @@ license = { text = "Proprietary" }
 # ⚠️ 这是一个「共享底座」包，不是独立仓。
 #    它住在主仓，以发布包形式被 12 个独立后端子项目消费。
 #    详见 docs/12-独立仓与共享UI设计.md
+#
+# 发布通道：GitHub Packages
+#   index-url = https://pypi.pkg.github.com/scholarspace/simple
+#   token     = <PAT with read:packages>
+# 详见 docs/adr/0015-shared-base-publishing.md
 
 dependencies = [
     "pydantic>=2.9",
@@ -44,6 +49,16 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scholar_core"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/scholar_core", "README.md", "mypy.ini", "setup.cfg"]
+
+# ── 发布到 GitHub Packages ───────────────────────────
+#   uv publish --index https://pypi.pkg.github.com/scholarspace
+#   认证：UV_PUBLISH_TOKEN=<PAT with read:packages>
+# ⚠️ 私有包必须带 --trusted-publishing 或显式 token
+[tool.uv]
+publish-url = "https://pypi.pkg.github.com/scholarspace"
 
 [tool.ruff]
 extend = "../../packages/conventions/python/ruff.toml"

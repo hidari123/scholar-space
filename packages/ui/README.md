@@ -10,13 +10,13 @@
 
 ## 职责边界
 
-| 层 | 职责 | 占比 |
-|---|---|---|
-| **theme** | 品牌主题（主色/暗色/紧凑/预设/租户配置）| 自研 |
-| **i18n** | 多语言（12 种界面语言 + 5 级回退链）| 自研 |
-| **components** | 业务无关复合组件（包装 AntD）| 自研 |
-| **layout / patterns** | 页面骨架与页面模式 | 自研 |
-| **底层组件** | Button/Table/Modal/Form… | **AntD** |
+| 层                    | 职责                                     | 占比     |
+| --------------------- | ---------------------------------------- | -------- |
+| **theme**             | 品牌主题（主色/暗色/紧凑/预设/租户配置） | 自研     |
+| **i18n**              | 多语言（12 种界面语言 + 5 级回退链）     | 自研     |
+| **components**        | 业务无关复合组件（包装 AntD）            | 自研     |
+| **layout / patterns** | 页面骨架与页面模式                       | 自研     |
+| **底层组件**          | Button/Table/Modal/Form…                 | **AntD** |
 
 **为什么不全自研**：AntD 有 70+ 组件，自研到"可用"约需 **500-600 人天**
 （无障碍 150+、虚拟滚动 60+、70 语言 locale 70、焦点管理 40…）。
@@ -42,6 +42,7 @@ function App() {
 ```
 
 **组件用法**（必须经由此包）：
+
 ```tsx
 import { Button, PageHeader } from '@scholarspace/ui';
 // ❌ import { Button } from 'antd';   —— 违反铁律，CI 报错
@@ -53,13 +54,13 @@ import { Button, PageHeader } from '@scholarspace/ui';
 
 ### 五层模型
 
-| 层 | 控制什么 | 手段 | 示例 |
-|---|---|---|---|
-| L0 色板 | 原始色值 | 预设对象 | `{ brand: '#5B5BD6' }` |
-| L1 种子令牌 | AntD token | `token.colorPrimary` | 状态色自动派生 |
-| L2 主题 | 一整套语义映射 | `theme="paper"` | 5 套学术预设 |
-| L3 品牌覆盖 | **只改主色** | `brandColor="#E8590C"` | 租户自定义 ⭐ |
-| L4 运行时微调 | 任意数值 | CSS 变量覆盖 | 圆角/字号 |
+| 层            | 控制什么       | 手段                   | 示例                   |
+| ------------- | -------------- | ---------------------- | ---------------------- |
+| L0 色板       | 原始色值       | 预设对象               | `{ brand: '#5B5BD6' }` |
+| L1 种子令牌   | AntD token     | `token.colorPrimary`   | 状态色自动派生         |
+| L2 主题       | 一整套语义映射 | `theme="paper"`        | 5 套学术预设           |
+| L3 品牌覆盖   | **只改主色**   | `brandColor="#E8590C"` | 租户自定义 ⭐          |
+| L4 运行时微调 | 任意数值       | CSS 变量覆盖           | 圆角/字号              |
 
 **核心**：改 1 处 `colorPrimary` → 全站生效。
 
@@ -80,13 +81,13 @@ components: {
 
 ### 5 套学术预设
 
-| ID | 名称 | 主色 |
-|---|---|---|
-| `scholar` | 学术紫 | `#611F6A` |
-| `academic` | 学术蓝 | `#1D4ED8` |
-| `emerald` | 墨绿 | `#047857` |
-| `graphite` | 石墨 | `#334155` |
-| `lab` | 实验室橙 | `#EA580C` |
+| ID         | 名称     | 主色      |
+| ---------- | -------- | --------- |
+| `scholar`  | 学术紫   | `#611F6A` |
+| `academic` | 学术蓝   | `#1D4ED8` |
+| `emerald`  | 墨绿     | `#047857` |
+| `graphite` | 石墨     | `#334155` |
+| `lab`      | 实验室橙 | `#EA580C` |
 
 ### 品牌配置 5 级来源
 
@@ -162,16 +163,13 @@ function Component() {
 ### 带变量
 
 ```tsx
-t('common.label.total', { count: 42 })   // → "共 42 条"
+t('common.label.total', { count: 42 }); // → "共 42 条"
 ```
 
 ### 自定义语言注册
 
 ```tsx
-<ScholarSpaceProvider
-  locale="tlh"
-  messages={{ tlh: { 'common.action.confirm': 'yImej' } }}
-/>
+<ScholarSpaceProvider locale="tlh" messages={{ tlh: { 'common.action.confirm': 'yImej' } }} />;
 ```
 
 ---
@@ -233,15 +231,15 @@ pnpm run build        # tsup（esm + dts）
 
 ## 关键规则速查
 
-| 规则 | 说明 |
-|---|---|
-| **唯一 antd 入口** | 业务代码禁止直接 import antd（CI G7）|
-| **组件级禁写颜色** | 只调结构（高度/圆角/间距）（CI G11）|
-| **`\| undefined`** | `exactOptionalPropertyTypes` 要求可选属性显式声明（见 05-代码规范.md 2.5）|
-| **文案 key 规范** | `{domain}.{section}.{element}[.{state}]`（CI G13）|
-| **占位符跨语言一致** | 同一 key 的占位符集合必须相同（CI G15）|
-| **CSS 变量前缀** | `--ss-` |
-| **core 零 React** | 本包无 core 层，但业务包有（CI G3-1）|
+| 规则                 | 说明                                                                       |
+| -------------------- | -------------------------------------------------------------------------- |
+| **唯一 antd 入口**   | 业务代码禁止直接 import antd（CI G7）                                      |
+| **组件级禁写颜色**   | 只调结构（高度/圆角/间距）（CI G11）                                       |
+| **`\| undefined`**   | `exactOptionalPropertyTypes` 要求可选属性显式声明（见 05-代码规范.md 2.5） |
+| **文案 key 规范**    | `{domain}.{section}.{element}[.{state}]`（CI G13）                         |
+| **占位符跨语言一致** | 同一 key 的占位符集合必须相同（CI G15）                                    |
+| **CSS 变量前缀**     | `--ss-`                                                                    |
+| **core 零 React**    | 本包无 core 层，但业务包有（CI G3-1）                                      |
 
 ---
 

@@ -9,6 +9,11 @@
     "node": ">=22.13.0"
   },
 
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -31,7 +36,9 @@
     "format": "biome format --write .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build"
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
+    "publish:check": "node ../../tools/codegen/dist/cli.js release-check",
+    "publish:pack": "pnpm pack"
   },
 
   "dependencies": {

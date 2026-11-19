@@ -22,6 +22,7 @@
 | [0012](./0012-scaffold-cli.md) | 脚手架以 TypeScript CLI 实现 | 已接受 | 2026-11-19 |
 | [0013](./0013-license-compliance.md) | License 合规策略（AGPL 隔离）| 已接受 | 2026-11-19 |
 | [0014](./0014-migration-strategy.md) | 双轨并行迁移策略 | 已接受 | 2026-11-19 |
+| [0015](./0015-shared-base-publishing.md) | ⭐ 共享底座的归属与发布通道（GitHub Packages + 主仓）| 已接受 | 2026-11-19 |
 
 > 同名前缀的 `000X-note.md` / `000X-appendix.md` 为索引辅助文件，内容指向对应主文件。
 
