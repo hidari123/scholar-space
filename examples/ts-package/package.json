@@ -8,7 +8,6 @@
 	"engines": {
 		"node": ">=22.13.0"
 	},
-
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -17,14 +16,12 @@
 		"./styles.css": "./dist/styles.css",
 		"./package.json": "./package.json"
 	},
-
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"files": [
 		"dist"
 	],
-
 	"scripts": {
 		"build": "tsup",
 		"typecheck": "tsc --noEmit",
@@ -34,14 +31,13 @@
 		"test": "vitest run",
 		"verify": "pnpm run typecheck && pnpm run lint && pnpm run test"
 	},
-
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.4",
 		"@types/react": "^19.3.0",
 		"jsdom": "^26.0.0",
 		"react": "^19.3.0",
 		"tsup": "^9.0.0",
-		"typescript": "^5.9.3",
+		"typescript": "^7.0.2",
 		"vitest": "^5.0.5"
 	}
 }

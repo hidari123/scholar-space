@@ -36,26 +36,36 @@ export function parseArgs(argv: string[]): {
   positional: string[];
   flags: Record<string, string | boolean>;
 } {
-  const [command = 'help', ...rest] = argv;
   const positional: string[] = [];
   const flags: Record<string, string | boolean> = {};
+  let command = 'help';
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const token = rest[index];
-    if (!token) continue;
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token === undefined) continue;
 
     if (token.startsWith('--')) {
+      // `--key value` 或 `--key`（布尔）
       const key = token.slice(2);
-      const next = rest[index + 1];
-      if (next && !next.startsWith('--')) {
+      const next = argv[index + 1];
+      if (next !== undefined && !next.startsWith('--')) {
         flags[key] = next;
         index += 1;
       } else {
         flags[key] = true;
       }
-    } else {
-      positional.push(token);
+      continue;
     }
+
+    // ⚠️ 第一个**非 flag** 的 token 是命令。
+    //    之前用 `argv[0]` 当命令 —— `--kind typescript sync` 会把
+    //    "--kind" 当成命令名。
+    if (command === 'help') {
+      command = token;
+      continue;
+    }
+
+    positional.push(token);
   }
 
   return { command, positional, flags };
@@ -69,12 +79,15 @@ const BUILTIN_COMMANDS: Command[] = [
     name: 'sync',
     describe: '同步规范基座到目标仓',
     usage: 'scholarspace-cli sync --kind python|typescript [--target <dir>]',
-    run(args, context) {
-      const kind = args.includes('--kind') ? args[args.indexOf('--kind') + 1] : 'python';
+    run(_args, context) {
+      // ⚠️ 从 context.flags 取 —— flags 之前没传给命令，
+      //    导致 `sync --kind typescript` 的 kind 丢失，静默降级成 python。
+      const kindValue = context.flags.kind;
+
       return runSync(
         context.projectRoot,
         context.target,
-        kind === 'typescript' ? 'typescript' : 'python',
+        kindValue === 'typescript' ? 'typescript' : 'python',
       );
     },
   },
@@ -96,20 +109,18 @@ const BUILTIN_COMMANDS: Command[] = [
         log.err('缺少项目名');
         return 1;
       }
-      const templateId = args.includes('--template')
-        ? args[args.indexOf('--template') + 1]
-        : 'python-service';
+
+      // ⚠️ 从 context.flags 取 —— flags 之前没传给命令，
+      //    导致 `--template ts-package` 被忽略，静默用默认模板。
+      const templateId =
+        typeof context.flags.template === 'string' ? context.flags.template : 'python-service';
+
       const overrides: Record<string, string> = {};
-      if (args.includes('--description')) {
-        overrides.description = args[args.indexOf('--description') + 1] ?? '';
+      if (typeof context.flags.description === 'string') {
+        overrides.description = context.flags.description;
       }
-      return runNew(
-        name,
-        templateId ?? 'python-service',
-        context.target,
-        overrides,
-        context.projectRoot,
-      );
+
+      return runNew(name, templateId, context.target, overrides, context.projectRoot);
     },
   },
 ];
@@ -159,22 +170,14 @@ export function runList(): number {
  * 命令分发。
  */
 export async function main(argv: string[]): Promise<number> {
-  const { command, positional, flags } = parseArgs(argv);
-
-  const targetRoot = typeof flags.target === 'string' ? resolve(flags.target) : process.cwd();
   // ⚠️ ESM 里没有 __dirname —— 用 import.meta.dirname（Node 20.11+）
   const projectRoot = resolve(import.meta.dirname, '..', '..');
-
-  const context: CommandContext = {
-    cwd: process.cwd(),
-    projectRoot,
-    target: targetRoot,
-  };
+  const { command, positional, context } = resolveInvocation(argv, process.cwd(), projectRoot);
 
   // 插件发现 —— 失败降级，不阻断
   const plugins: PluginCommand[] = [];
   try {
-    const loaded = await discoverPlugins(context.cwd, projectRoot);
+    const loaded = await discoverPlugins(context.cwd, projectRoot, context.flags);
     for (const plugin of loaded) {
       if (plugin.error) {
         log.warn(`插件 ${plugin.provider} 加载失败：${plugin.error}`);
@@ -210,6 +213,38 @@ export async function main(argv: string[]): Promise<number> {
   log.err(`未知命令：${command}`);
   log.info('用 `scholarspace-cli help` 看可用命令');
   return 1;
+}
+
+/**
+ * 把 argv 解析成命令分发所需的全部信息。
+ *
+ * ⚠️ 单独抽出来是为了**可测** ——
+ *    之前 flags 只在 parseArgs 里、没传给命令，
+ *    导致 `sync --kind typescript` / `new x --template ts-package`
+ *    静默降级成默认值。
+ *    把「解析 → 组装 context」这一步独立出来后就能直接断言。
+ */
+export function resolveInvocation(
+  argv: string[],
+  cwd: string,
+  projectRoot: string,
+): {
+  command: string;
+  positional: string[];
+  context: CommandContext;
+} {
+  const { command, positional, flags } = parseArgs(argv);
+
+  const targetRoot = typeof flags.target === 'string' ? resolve(flags.target) : cwd;
+
+  const context: CommandContext = {
+    cwd,
+    projectRoot,
+    target: targetRoot,
+    flags,
+  };
+
+  return { command, positional, context };
 }
 
 // 直接执行时

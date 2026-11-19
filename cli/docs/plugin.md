@@ -99,6 +99,8 @@ interface PluginContext {
   cwd: string;
   /** 主仓根目录。 */
   projectRoot: string;
+  /** 命令行标志（`--key value` 或 `--key`）。 */
+  flags?: Record<string, string | boolean>;
 }
 ```
 
@@ -109,6 +111,39 @@ interface PluginContext {
 | 命令名带 `:` 前缀（`deck:new`）         | 避免与内核命令（`new` `sync`）冲突 |
 | 返回 exit code，不要 `process.exit()`   | 让 CLI 统一处理                    |
 | 用 `context.cwd` 而不是 `process.cwd()` | 便于测试与 `--target`              |
+| **标志从 `context.flags` 取**           | `args` 里只有位置参数              |
+
+> ⚠️ **标志必须从 `context.flags` 取** —— `args` 里只有位置参数。
+> 内核命令早期就踩了这个坑：`sync --kind typescript`
+> 静默跑成 python、`new x --template ts-package` 静默生成 Python 项目。
+> 静默失败比崩溃难发现得多 —— 现在有回归测试钉住。
+
+**带标志的插件命令**：
+
+```ts
+export const commands = {
+  'deck:export': {
+    describe: '导出 PPT',
+    run: (args, context) => {
+      // ✅ 标志从 context.flags 取
+      const format = context.flags?.format ?? 'pptx';
+      const force = context.flags?.force === true;
+
+      if (!args[0]) {
+        console.error('缺少 deck 名');
+        return 1;
+      }
+
+      exportDeck(args[0], { format, force });
+      return 0;
+    },
+  },
+};
+```
+
+```bash
+scholarspace-cli deck:export my-deck --format pdf --force
+```
 
 ---
 

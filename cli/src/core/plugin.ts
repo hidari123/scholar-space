@@ -43,6 +43,13 @@ export interface PluginContext {
   cwd: string;
   /** 主仓根目录。 */
   projectRoot: string;
+  /**
+   * 命令行标志（`--key value` 或 `--key`）。
+   *
+   * ⚠️ 插件也要能拿到 flags —— 否则插件命令
+   *    只能收到位置参数，`--force` / `--dry-run` 这类开关用不了。
+   */
+  flags?: Record<string, string | boolean>;
 }
 
 /** 插件导出形状。 */
@@ -166,9 +173,10 @@ export async function loadPlugin(
 export async function discoverPlugins(
   cwd: string,
   projectRoot: string,
+  flags: Record<string, string | boolean> = {},
 ): Promise<PluginLoadResult[]> {
   const results: PluginLoadResult[] = [];
-  const context: PluginContext = { cwd, projectRoot };
+  const context: PluginContext = { cwd, projectRoot, flags };
 
   // ① 当前仓
   const current = await loadPlugin(cwd, context);

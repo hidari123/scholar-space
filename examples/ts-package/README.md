@@ -17,14 +17,14 @@
 
 ## 验证结果（全部通过 ✅）
 
-| # | 验证项 | 命令 | 结果 |
-|---|---|---|---|
-| 1 | tsconfig 继承 conventions | `tsc --noEmit` 走 base 的 `strict` + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` | ✅ |
-| 2 | biome 继承 conventions | `biome check .` | ✅ Checked 17 files, no fixes |
-| 3 | biome formatter 生效 | 自动格式化（tabs for JSON / 2 spaces for TS）| ✅ |
-| 4 | vitest 测试 | `vitest run` | ✅ 4 passed |
-| 5 | tsup 构建（含 dts）| `tsup` | ✅ Build success |
-| 6 | 三层分离 | core / components / hooks | ✅ |
+| #   | 验证项                    | 命令                                                                                           | 结果                          |
+| --- | ------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------- |
+| 1   | tsconfig 继承 conventions | `tsc --noEmit` 走 base 的 `strict` + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` | ✅                            |
+| 2   | biome 继承 conventions    | `biome check .`                                                                                | ✅ Checked 17 files, no fixes |
+| 3   | biome formatter 生效      | 自动格式化（tabs for JSON / 2 spaces for TS）                                                  | ✅                            |
+| 4   | vitest 测试               | `vitest run`                                                                                   | ✅ 4 passed                   |
+| 5   | tsup 构建（含 dts）       | `tsup`                                                                                         | ✅ Build success              |
+| 6   | 三层分离                  | core / components / hooks                                                                      | ✅                            |
 
 ---
 
@@ -65,14 +65,14 @@ tsup.config.ts    构建（esm + dts）
 
 ```ts
 // src/core/create-example.ts —— 无 import React，无 DOM 访问
-import { ValidationError } from './errors';
+import { ValidationError } from "./errors";
 
 export function createExample(input: CreateExampleInput): Example {
-  const name = input.name.trim();
-  if (name.length === 0) {
-    throw new ValidationError('name cannot be empty', { field: 'name' });
-  }
-  return { exampleId: `example-${Date.now()}`, name, createdAt: new Date() };
+	const name = input.name.trim();
+	if (name.length === 0) {
+		throw new ValidationError("name cannot be empty", { field: "name" });
+	}
+	return { exampleId: `example-${Date.now()}`, name, createdAt: new Date() };
 }
 ```
 
@@ -83,19 +83,27 @@ export function createExample(input: CreateExampleInput): Example {
 ```tsx
 // src/components/Example.tsx
 export interface ExampleProps {
-  example: Example;
-  showCreatedAt?: boolean;
-  onSelect?: (example: Example) => void;   // 不传 → 按钮不渲染
+	example: Example;
+	showCreatedAt?: boolean;
+	onSelect?: (example: Example) => void; // 不传 → 按钮不渲染
 }
 
-export function ExampleCard({ example, showCreatedAt = false, onSelect }: ExampleProps) {
-  return (
-    <article>
-      <h3>{example.name}</h3>
-      {showCreatedAt ? <time>{example.createdAt.toLocaleDateString()}</time> : null}
-      {onSelect ? <button onClick={() => onSelect(example)}>Select</button> : null}
-    </article>
-  );
+export function ExampleCard({
+	example,
+	showCreatedAt = false,
+	onSelect,
+}: ExampleProps) {
+	return (
+		<article>
+			<h3>{example.name}</h3>
+			{showCreatedAt ? (
+				<time>{example.createdAt.toLocaleDateString()}</time>
+			) : null}
+			{onSelect ? (
+				<button onClick={() => onSelect(example)}>Select</button>
+			) : null}
+		</article>
+	);
 }
 ```
 
@@ -106,11 +114,11 @@ export function ExampleCard({ example, showCreatedAt = false, onSelect }: Exampl
 ```ts
 // src/core/errors.ts
 export const ErrorCode = {
-  OK: 0,
-  INVALID_ARGUMENT: 40001,
-  NOT_FOUND: 40401,
-  INSUFFICIENT_BALANCE: 60001,
-  // …与 packages/conventions/api/error-codes.json 一致
+	OK: 0,
+	INVALID_ARGUMENT: 40001,
+	NOT_FOUND: 40401,
+	INSUFFICIENT_BALANCE: 60001,
+	// …与 packages/conventions/api/error-codes.json 一致
 } as const;
 ```
 
@@ -118,20 +126,20 @@ export const ErrorCode = {
 
 ## 本次验证发现的 conventions 缺陷（4 个，全部已修）
 
-| # | 缺陷 | 根因 | 修复 |
-|---|---|---|---|
-| 1 | **Biome `extends` 报 "must be either `//` or an array of paths"** | Biome 2.x 的 `extends` **必须是数组**，字符串会失败 | 改为 `["path"]` 数组 |
-| 2 | **`$comment` 不是合法 key** | Biome 的 schema 是严格的，未知 key 直接报错 | 删除 `$comment`，注释放 README |
-| 3 | **`noConsoleLog` 不存在** | Biome 2.x 的规则名是 `noConsole`（且 `recommended` 在 2.6 已废弃）| 改名 `noConsole`，`recommended` 保留（仅告警）|
-| 4 | **嵌套 root 配置冲突** | base 配置不能带 `"root": true`，被 extends 时会报 "there's already a root configuration" | base 不设 root |
+| #   | 缺陷                                                              | 根因                                                                                     | 修复                                           |
+| --- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1   | **Biome `extends` 报 "must be either `//` or an array of paths"** | Biome 2.x 的 `extends` **必须是数组**，字符串会失败                                      | 改为 `["path"]` 数组                           |
+| 2   | **`$comment` 不是合法 key**                                       | Biome 的 schema 是严格的，未知 key 直接报错                                              | 删除 `$comment`，注释放 README                 |
+| 3   | **`noConsoleLog` 不存在**                                         | Biome 2.x 的规则名是 `noConsole`（且 `recommended` 在 2.6 已废弃）                       | 改名 `noConsole`，`recommended` 保留（仅告警） |
+| 4   | **嵌套 root 配置冲突**                                            | base 配置不能带 `"root": true`，被 extends 时会报 "there's already a root configuration" | base 不设 root                                 |
 
 ### 额外发现
 
-| # | 问题 | 影响 | 解决 |
-|---|---|---|---|
-| A | **biome 的 JSON formatter 用 tab 缩进** | 与 TS 的 2 空格不一致，视觉上割裂 | 接受现状（JSON 用 tab 是 Biome 默认）；或 base 里给 `json.formatter.indentWidth` 设 2 |
-| B | **biome 会对 `export` 排序** | 手写顺序与自动排序不一致会报 lint 错 | 接受自动排序；或关掉 `useSortedKeys` 类规则 |
-| C | **vitest `environment: 'jsdom'` 需显式装 jsdom** | 缺依赖直接崩 | `devDependencies` 必须含 `jsdom`（React 类包）|
+| #   | 问题                                             | 影响                                 | 解决                                                                                  |
+| --- | ------------------------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------- |
+| A   | **biome 的 JSON formatter 用 tab 缩进**          | 与 TS 的 2 空格不一致，视觉上割裂    | 接受现状（JSON 用 tab 是 Biome 默认）；或 base 里给 `json.formatter.indentWidth` 设 2 |
+| B   | **biome 会对 `export` 排序**                     | 手写顺序与自动排序不一致会报 lint 错 | 接受自动排序；或关掉 `useSortedKeys` 类规则                                           |
+| C   | **vitest `environment: 'jsdom'` 需显式装 jsdom** | 缺依赖直接崩                         | `devDependencies` 必须含 `jsdom`（React 类包）                                        |
 
 ---
 

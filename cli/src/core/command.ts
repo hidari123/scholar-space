@@ -29,6 +29,14 @@ export interface CommandContext {
   projectRoot: string;
   /** 目标目录（--target）。 */
   target: string;
+  /**
+   * 命令行标志（`--key value` 或 `--key`）。
+   *
+   * ⚠️ 之前 flags 只在 parseArgs 里，**没有传给命令** ——
+   *    导致 `sync --kind typescript` 里的 kind 丢失，
+   *    静默降级成 python。
+   */
+  flags: Record<string, string | boolean>;
 }
 
 const log = {
