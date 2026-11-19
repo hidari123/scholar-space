@@ -4,6 +4,25 @@
 
 ---
 
+> **✅ 实现状态（2026-11-19）**：
+>
+> | 部分 | 状态 | 位置 |
+> |---|---|---|
+> | 领域层（实体/主题/值对象）| ✅ | `scholarspace-slides/libs/slides-core` |
+> | PPTX 矢量渲染 | ✅ | `scholarspace-slides/libs/slides-render` |
+> | 8 套内置学术主题 | ✅ | 同上 `domain/builtin_themes.py` |
+> | 文本量测 + 中英混排断行 | ✅ | 同上 `layout/measure.py` |
+> | **G2 闸门** | ✅ **通过** | `docs/adr/0019-g2-gate-review.md` |
+> | PNG 预览 | ⬜ | M3.1 |
+> | 真实论文端到端验证 | ⬜ | M3.1 |
+> | Pillow 真实字体度量 | ⬜ | M3.1 |
+> | 图片渲染 | ⬜ | M3.2 |
+> | 溢出降级（TRUNCATE/SPLIT/REGENERATE）| ⬜ | M3.2 |
+> | PDF 导出 | ⬜ | M3.3 |
+> | HTTP 层 | ⬜ | M3.3 |
+
+---
+
 ## 1. 定位
 
 | 能力 | 说明 |
