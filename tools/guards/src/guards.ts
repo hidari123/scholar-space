@@ -405,8 +405,191 @@ function hasNonAscii(text: string): boolean {
   return false;
 }
 
+// ══════════════════════════════════════════════════════════
+// G25 —— 规范基座副本与源同步
+// ══════════════════════════════════════════════════════════
+
+/**
+ * 基座文件清单：源 → 副本名。
+ *
+ * ⚠️ 与 `cli/src/core/sync.ts` 的 SYNC_ITEMS 保持一致。
+ *    两边都要改 —— 这里漏了就会漏检。
+ */
+const BASE_SYNC_MAP: Array<{ source: string; copy: string }> = [
+  // TypeScript
+  {
+    source: 'packages/conventions/typescript/tsconfig.base.json',
+    copy: 'tsconfig.base.json',
+  },
+  {
+    source: 'packages/conventions/typescript/biome.json',
+    copy: 'biome.base.json',
+  },
+  // Python
+  { source: 'packages/conventions/python/ruff.toml', copy: 'ruff.toml' },
+  { source: 'packages/conventions/python/mypy.ini', copy: 'mypy.ini' },
+];
+
+/**
+ * 允许的本地改动。
+ *
+ * ⚠️ 必须与 `cli/src/core/sync.ts` 的 SYNC_EXCEPTIONS 保持一致 ——
+ *    两边算法不同就会「sync 说没问题，guard 说有问题」。
+ *
+ * ⚠️ `copy` 是**相对主仓的路径** —— 不是文件名。
+ *    用文件名会误伤所有 mypy.ini（只有 core 需要 pydantic 插件）。
+ */
+const BASE_SYNC_EXCEPTIONS: Array<{ path: string; addition: string; reason: string }> = [
+  {
+    path: 'packages/core/mypy.ini',
+    addition: 'plugins = pydantic.mypy',
+    reason:
+      'core 用 pydantic，需要启用 pydantic.mypy 插件；' +
+      'base 不启用（纯领域包没装 pydantic，插件会加载失败）',
+  },
+];
+
+/** 需要检查副本的目录（相对主仓）。 */
+const BASE_SYNC_DIRS = ['packages', 'tools', 'cli', 'examples', 'apps'];
+
+/**
+ * 归一化内容以便比较。
+ *
+ * ⚠️ 要忽略：
+ *   · 行尾（CRLF vs LF）—— Windows 与 Linux 会不一致
+ *   · BOM —— PowerShell 的 Out-File 会加
+ *   · 末尾空行
+ */
+function normalizeForCompare(content: string): string {
+  return content
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\s+$/, '');
+}
+
+/**
+ * 把允许的本地偏离应用到源内容上。
+ *
+ * ⚠️ 必须与 `cli/src/core/sync.ts` 的 `applyExceptions` **算法一致** ——
+ *    两边不一致就会出现「sync 说没问题，guard 说有问题」。
+ */
+function applyExceptions(sourceContent: string, relPath: string): string {
+  let result = sourceContent;
+
+  for (const exception of BASE_SYNC_EXCEPTIONS) {
+    if (exception.path !== relPath) continue;
+    // ⚠️ 必须忽略注释行 —— 源文件里有 `#   plugins = pydantic.mypy`
+    //    这样的说明注释，直接 includes 会误判「已经有了」。
+    if (hasActiveOption(result, exception.addition)) continue;
+
+    result = insertIntoSection(result, exception.addition);
+  }
+
+  return normalizeForCompare(result);
+}
+
+/**
+ * 把一行配置插到**配置段内部**。
+ *
+ * ⚠️ 必须与 `cli/src/core/sync.ts` 的 `insertIntoSection` 一致。
+ */
+function insertIntoSection(content: string, option: string): string {
+  const lines = content.split('\n');
+
+  const sectionIndex = lines.findIndex((line) => line.trim().startsWith('['));
+  if (sectionIndex < 0) {
+    return `${content}\n${option}\n`;
+  }
+
+  let insertAt = sectionIndex + 1;
+  for (let index = sectionIndex + 1; index < lines.length; index += 1) {
+    const trimmed = (lines[index] ?? '').trim();
+    if (trimmed === '') continue;
+    if (trimmed.startsWith('#')) continue;
+    if (trimmed.startsWith('[')) break;
+    insertAt = index;
+    break;
+  }
+
+  lines.splice(insertAt, 0, option);
+  return lines.join('\n');
+}
+
+/**
+ * 配置项是否已**真正生效**（不是注释里的说明）。
+ *
+ * ⚠️ 必须与 `cli/src/core/sync.ts` 的 `hasActiveOption` 一致。
+ */
+function hasActiveOption(content: string, option: string): boolean {
+  const key = option.split('=')[0]?.trim() ?? option;
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed === '') continue;
+    if (trimmed.startsWith('#') || trimmed.startsWith(';')) continue;
+    if (trimmed.startsWith(key)) return true;
+  }
+
+  return false;
+}
+
+const g25: Guard = {
+  id: 'G25',
+  name: '规范基座副本与源同步',
+  description: '各仓的 base 副本必须与 packages/conventions 的源一致（改了源要重新 cli sync）',
+  severity: 'error',
+  scope: 'packages',
+  run(root) {
+    const violations: string[] = [];
+
+    for (const dir of BASE_SYNC_DIRS) {
+      const base = join(root, dir);
+      if (!existsSync(base)) continue;
+
+      for (const file of walkFiles(base, ['.json', '.toml', '.ini'])) {
+        const violation = checkBaseCopy(root, file);
+        if (violation) violations.push(violation);
+      }
+    }
+
+    return violations;
+  },
+};
+
+/**
+ * 检查单个 base 副本是否与源一致。
+ *
+ * @returns 违规说明；一致则返回 null
+ */
+function checkBaseCopy(root: string, file: string): string | null {
+  const name = file.split('\\').pop() ?? file;
+  const entry = BASE_SYNC_MAP.find((item) => item.copy === name);
+  if (!entry) return null;
+
+  // 源文件本身跳过
+  if (normalizeForCompare(file) === normalizeForCompare(join(root, entry.source))) {
+    return null;
+  }
+
+  const sourcePath = join(root, entry.source);
+  if (!existsSync(sourcePath)) return null;
+
+  const relPath = relative(root, file).replace(/\\/g, '/');
+  const sourceContent = normalizeForCompare(readText(sourcePath));
+  const copyContent = normalizeForCompare(readText(file));
+
+  // ⚠️ 允许的本地偏离 —— 与 cli 的 SYNC_EXCEPTIONS 同一套算法：
+  //    「源 + 偏离」与副本比较。
+  const expected = applyExceptions(sourceContent, relPath);
+  if (expected === copyContent) return null;
+
+  const kind = name.includes('toml') || name.includes('ini') ? 'python' : 'typescript';
+
+  return `${relPath}: 与 ${entry.source} 不一致 —— ` + `请跑 \`cli sync --kind ${kind}\``;
+}
+
 /** 全部护栏。 */
-export const GUARDS: Guard[] = [g7, g11, g13, g16, g17, g21, g23, g24];
+export const GUARDS: Guard[] = [g7, g11, g13, g16, g17, g21, g23, g24, g25];
 
 /**
  * 执行全部护栏。

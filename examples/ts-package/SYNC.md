@@ -8,13 +8,13 @@
 
 ```json
 {
-	"extends": "./tsconfig.base.json"
+  "extends": "./tsconfig.base.json"
 }
 ```
 
 ```json
 {
-	"extends": ["./biome.base.json"]
+  "extends": ["./biome.base.json"]
 }
 ```
 

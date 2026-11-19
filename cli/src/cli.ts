@@ -78,16 +78,23 @@ const BUILTIN_COMMANDS: Command[] = [
   {
     name: 'sync',
     describe: '同步规范基座到目标仓',
-    usage: 'scholarspace-cli sync --kind python|typescript [--target <dir>]',
+    usage:
+      'scholarspace-cli sync --kind python|typescript [--target <dir>] [--check] [--with-exceptions]',
     run(_args, context) {
       // ⚠️ 从 context.flags 取 —— flags 之前没传给命令，
       //    导致 `sync --kind typescript` 的 kind 丢失，静默降级成 python。
       const kindValue = context.flags.kind;
+      const checkOnly = context.flags.check === true;
+      // ⚠️ `--with-exceptions` —— 应用本地偏离。
+      //    比如 core 需要启用 pydantic.mypy 插件（base 里没有）。
+      const withExceptions = context.flags['with-exceptions'] === true;
 
       return runSync(
         context.projectRoot,
         context.target,
         kindValue === 'typescript' ? 'typescript' : 'python',
+        checkOnly,
+        withExceptions,
       );
     },
   },

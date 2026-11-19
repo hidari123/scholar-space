@@ -16,18 +16,45 @@ const log = {
 
 /**
  * 同步规范基座到目标仓。
+ *
+ * @param checkOnly 只检查不修改（CI 用）
+ * @param applyLocalExceptions 应用本地偏离（如启用 pydantic 插件）
  */
 export function runSync(
   sourceRoot: string,
   targetRoot: string,
   kind: 'python' | 'typescript',
+  checkOnly = false,
+  applyLocalExceptions = false,
 ): number {
-  log.step(`同步规范基座（${kind}）→ ${targetRoot}`);
+  log.step(
+    checkOnly
+      ? `检查规范基座是否最新（${kind}）→ ${targetRoot}`
+      : `同步规范基座（${kind}）→ ${targetRoot}`,
+  );
 
-  const result = syncConventions(sourceRoot, targetRoot, kind);
+  const result = syncConventions(
+    sourceRoot,
+    targetRoot,
+    kind,
+    checkOnly ? 'check' : 'copy',
+    applyLocalExceptions,
+  );
 
   for (const failure of result.failed) {
     log.err(failure);
+  }
+
+  if (checkOnly) {
+    // ⚠️ check 模式 —— 副本过期就报错退出码 1，但**不改文件**
+    if (result.changed) {
+      log.err(`规范基座副本已过期：${result.copied.join(', ')}`);
+      log.info('修复：npx @scholarspace/cli sync --kind python|typescript');
+      return 1;
+    }
+
+    log.ok('规范基座副本与源一致');
+    return result.failed.length > 0 ? 1 : 0;
   }
 
   if (result.changed) {

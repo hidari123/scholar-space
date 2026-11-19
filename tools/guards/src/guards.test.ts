@@ -316,3 +316,92 @@ describe('walkFiles', () => {
     expect(walkFiles(join(tmpdir(), 'definitely-not-here-xyz'), ['.ts'])).toEqual([]);
   });
 });
+
+/**
+ * 建一个带规范源与副本的临时主仓。
+ *
+ * @param copyContent 副本内容（默认与源相同）
+ */
+function makeSyncRoot(copyContent?: string): string {
+  const root = mkdtempSync(join(tmpdir(), 'guards-sync-'));
+
+  // 规范源
+  mkdirSync(join(root, 'packages', 'conventions', 'typescript'), { recursive: true });
+  writeFileSync(
+    join(root, 'packages', 'conventions', 'typescript', 'tsconfig.base.json'),
+    '{"compilerOptions":{"strict":true}}',
+    'utf8',
+  );
+
+  // 副本
+  mkdirSync(join(root, 'packages', 'ui'), { recursive: true });
+  writeFileSync(
+    join(root, 'packages', 'ui', 'tsconfig.base.json'),
+    copyContent ?? '{"compilerOptions":{"strict":true}}',
+    'utf8',
+  );
+
+  return root;
+}
+
+describe('G25 —— 规范基座副本与源同步', () => {
+  it('副本与源一致时通过', () => {
+    const violations = guard('G25').run(makeSyncRoot());
+    expect(violations).toEqual([]);
+  });
+
+  it('副本被改动时报违规', () => {
+    /** ⚠️ 这正是要防的：改了源忘了同步。 */
+    const violations = guard('G25').run(makeSyncRoot('{"compilerOptions":{"strict":false}}'));
+
+    expect(violations.length).toBe(1);
+    expect(violations[0]).toContain('packages/ui/tsconfig.base.json');
+    expect(violations[0]).toContain('cli sync');
+  });
+
+  it('行尾差异不算违规', () => {
+    /** CRLF vs LF —— Windows 与 Linux 的正常差异。 */
+    const root = makeSyncRoot();
+    const path = join(root, 'packages', 'ui', 'tsconfig.base.json');
+    writeFileSync(path, '{"compilerOptions":{"strict":true}}\r\n', 'utf8');
+
+    expect(guard('G25').run(root)).toEqual([]);
+  });
+
+  it('BOM 不算违规', () => {
+    /** PowerShell 的 Out-File 会加 BOM。 */
+    const root = makeSyncRoot();
+    const path = join(root, 'packages', 'ui', 'tsconfig.base.json');
+    writeFileSync(path, '\uFEFF{"compilerOptions":{"strict":true}}', 'utf8');
+
+    expect(guard('G25').run(root)).toEqual([]);
+  });
+
+  it('缩进差异算违规', () => {
+    /** ⚠️ Biome 会把 JSON 重排成 tab —— 副本被格式化过就是漂移。 */
+    const violations = guard('G25').run(makeSyncRoot('{\n\t"compilerOptions":{"strict":true}\n}'));
+
+    expect(violations.length).toBe(1);
+  });
+
+  it('没有副本时不报错', () => {
+    /** 只有源、没有副本 —— 不该报错（子仓可能还没同步）。 */
+    const root = mkdtempSync(join(tmpdir(), 'guards-nosync-'));
+    mkdirSync(join(root, 'packages', 'conventions', 'typescript'), { recursive: true });
+    writeFileSync(
+      join(root, 'packages', 'conventions', 'typescript', 'tsconfig.base.json'),
+      '{}',
+      'utf8',
+    );
+
+    expect(guard('G25').run(root)).toEqual([]);
+  });
+
+  it('源文件本身不被当成副本', () => {
+    /** 源在 packages/conventions 下 —— 不能自己跟自己比。 */
+    const root = makeSyncRoot();
+    const violations = guard('G25').run(root);
+
+    expect(violations).toEqual([]);
+  });
+});

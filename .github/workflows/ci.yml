@@ -46,6 +46,52 @@ jobs:
         run: node tools/guards/dist/cli.js run
 
   # ══════════════════════════════════════════════════════
+  # 规范基座同步 —— 改了 conventions 必须同步到各仓
+  # ══════════════════════════════════════════════════════
+  base-sync:
+    name: 规范基座同步
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 构建 CLI
+        run: pnpm --filter @scholarspace/cli build
+
+      - name: 检查各仓 base 副本与源一致
+        # ⚠️ 用 `--check` —— **只检查不修改**。
+        #    改了 conventions 却忘了同步时，这里会失败并告诉你要跑什么。
+        run: |
+          set -e
+          failed=0
+          for dir in packages/ui cli tools/codegen tools/guards examples/ts-package; do
+            if [ -f "$dir/package.json" ]; then
+              node cli/dist/cli.js sync --kind typescript --target "$dir" --check || failed=1
+            fi
+          done
+          for dir in packages/core packages/services/auth examples/python-service; do
+            if [ -f "$dir/pyproject.toml" ]; then
+              node cli/dist/cli.js sync --kind python --target "$dir" --check || failed=1
+            fi
+          done
+          exit $failed
+
+      - name: 跑 G25 护栏（副本与源一致）
+        run: |
+          pnpm --filter @scholarspace/guards build
+          node tools/guards/dist/cli.js run --only G25
+
+  # ══════════════════════════════════════════════════════
   # TypeScript —— 共享底座（ui / codegen / cli / guards）
   # ══════════════════════════════════════════════════════
   typescript:
