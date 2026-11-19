@@ -5,10 +5,9 @@ packages:
   - 'tools/*'
   - 'cli'
 
-  # ── 独立子项目（polyrepo，本地联调用）──────────────────
-  # 由 `scripts/dev-setup.mjs` 克隆到 ../scholarspace-<name>
-  # 开发时通过 `pnpm-workspace.yaml` 的 link 引入，或在各包内用
-  # `"@scholarspace/core": "workspace:*"` 指向 ../scholarspace-core
+  # ── 示例包（验证 conventions 可用性）──────────────────
+  - 'examples/*'
 
-# 独立子项目在 polyrepo 中各自独立发版，此处仅用于本地开发联调
-# 生产/CI 中各子项目用自己的独立 workspace，不依赖本文件
+# 独立子项目（polyrepo）在各自仓内独立管理 workspace。
+# 本地联调时用 `scripts/dev-setup.mjs` 克隆到 ../scholarspace-<name>，
+# 各子包内用相对路径引用主项目的 packages/conventions。

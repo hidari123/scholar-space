@@ -1,0 +1,7 @@
+{
+	"root": false,
+	"extends": ["../../packages/conventions/typescript/biome.json"],
+	"files": {
+		"includes": ["src/**", "tests/**", "*.json", "*.ts"]
+	}
+}

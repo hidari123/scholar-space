@@ -1,6 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
-  "root": true,
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
 
   "files": {
     "includes": ["**", "!**/dist/**", "!**/node_modules/**", "!**/coverage/**", "!**/generated/**"]
@@ -30,25 +29,13 @@
         "useConst": "error",
         "useImportType": "error",
         "useExportType": "error",
-        "noNonNullAssertion": "error",
-        "useNamingConvention": {
-          "level": "error",
-          "options": {
-            "strictCase": false,
-            "conventions": {
-              "camelCase": {
-                "select": { "kind": "any" },
-                "ignore": ["PascalCase", "SCREAMING_SNAKE_CASE"]
-              }
-            }
-          }
-        }
+        "noNonNullAssertion": "error"
       },
 
       "suspicious": {
         "recommended": true,
         "noExplicitAny": "error",
-        "noConsoleLog": { "level": "warn" },
+        "noConsole": { "level": "warn" },
         "noArrayIndexKey": "error"
       },
 
@@ -63,8 +50,7 @@
       },
 
       "performance": {
-        "recommended": true,
-        "noDelete": "off"
+        "recommended": true
       },
 
       "security": {

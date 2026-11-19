@@ -1,0 +1,10 @@
+# ????????
+examples/*/.venv/
+examples/*/node_modules/
+examples/*/dist/
+examples/*/coverage/
+examples/*/.pytest_cache/
+examples/*/.mypy_cache/
+examples/*/.ruff_cache/
+examples/*/*.egg-info/
+examples/*/.importlinter.local
