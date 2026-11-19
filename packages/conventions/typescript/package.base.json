@@ -1,0 +1,73 @@
+{
+  "$comment": "package.json 模板 — 规范唯一来源：scholarspace/packages/conventions/typescript/package.base.json",
+
+  "name": "@scholarspace/<PACKAGE>",
+  "version": "0.0.0",
+  "description": "<DESCRIPTION>",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+
+  "engines": {
+    "node": ">=22.13.0"
+  },
+
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+
+  "files": ["dist"],
+
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
+    "size": "size-limit",
+    "release:check": "pnpm run size && publint && attw --pack"
+  },
+
+  "peerDependencies": {
+    "react": ">=18.0.0 <20"
+  },
+
+  "peerDependenciesMeta": {
+    "react": { "optional": false }
+  },
+
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.4",
+    "@size-limit/preset-small-lib": "^14.3.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@arethetypeswrong/cli": "^0.18.5",
+    "publint": "^0.3.25",
+    "attw": "^0.18.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "size-limit": "^14.3.0",
+    "tsup": "^9.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

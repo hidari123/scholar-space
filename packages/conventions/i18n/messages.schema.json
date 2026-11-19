@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarspace.dev/schemas/i18n.messages.schema.json",
+  "title": "LocaleMessages",
+  "description": "文案语言表 — 扁平 key + {name} 占位符。缺 key 会回退（见 key-patterns.json 的 fallbackChain）。",
+
+  "type": "object",
+  "additionalProperties": {
+    "type": "string",
+    "description": "文案内容。占位符格式 {name}。"
+  },
+  "propertyNames": {
+    "pattern": "^(auth|paper|slides|orchestra|community|billing|pdf|common|authz|workspace)\\.([a-zA-Z][a-zA-Z0-9]*)\\.(.+)$",
+    "errorMessage": "key 必须符合 <domain>.<section>.<element>[.<state>] 规范"
+  },
+
+  "$defs": {
+    "placeholder": {
+      "type": "string",
+      "pattern": "^\\{[a-zA-Z][a-zA-Z0-9]*\\}$"
+    }
+  },
+
+  "examples": [
+    {
+      "common.action.confirm": "确定",
+      "common.action.cancel": "取消",
+      "common.error.network": "网络异常，请稍后重试",
+      "paper.search.placeholder": "搜索论文、作者或关键词",
+      "paper.search.result.count": "共 {count} 条结果",
+      "slides.editor.button.export": "导出 PPTX",
+      "slides.editor.status.rendering": "正在渲染第 {current} / {total} 页"
+    }
+  ],
+
+  "rules": {
+    "flatKeysOnly": true,
+    "flatNote": "扁平 key 而非嵌套 —— 便于正则校验、缺失检测、覆盖率计算",
+    "placeholderFormat": "{name}",
+    "placeholderNote": "不用 %s / {{}} / <<>>",
+    "crossLocalePlaceholdersMustMatch": true,
+    "crossLocaleNote": "同一 key 在不同语言的占位符集合必须完全一致（CI 护栏 G15）"
+  }
+}

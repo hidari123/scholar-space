@@ -1,0 +1,72 @@
+# 包元数据模板 — 规范唯一来源
+# 规范唯一来源：scholarspace/packages/conventions/python/pyproject.base.toml
+#
+# 用法（子项目 pyproject.toml）：
+#   [project]
+#   name = "scholarspace-my-package"
+#   dynamic = ["version"]
+#
+#   [tool.uv]
+#   version = { source = "uv-dynamic-versioning" }
+#
+#   [tool.hatch.version]
+#   source = "uv-dynamic-versioning"
+#
+#   [build-system]
+#   requires = ["hatchling", "uv-dynamic-versioning"]
+#   build-backend = "hatchling.build"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/<PACKAGE>"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "pyproject.toml"]
+
+# ── 版本（uv-dynamic-versioning，从 git tag 推导）────────
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv]
+version = { source = "uv-dynamic-versioning" }
+
+# ── 依赖分组 ───────────────────────────────────────────
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "pytest-mock>=3.14",
+    "hypothesis>=6.100",
+    "httpx>=0.28",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "import-linter>=2.1",
+    "schemathesis>=3.35",
+    "pip-audit>=2.7",
+]
+
+# ── 工具配置 ───────────────────────────────────────────
+[tool.ruff]
+extend = "../scholarspace/packages/conventions/python/ruff.toml"
+
+[tool.mypy]
+extends = ["../scholarspace/packages/conventions/python/mypy.ini"]
+
+[tool.pytest.ini_options]
+# 见 pytest.ini
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]

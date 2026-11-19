@@ -1,0 +1,75 @@
+{
+  "$comment": "i18n 校验规则 — 规范唯一来源。CI 护栏 G13/G14/G15 读取本文件。",
+
+  "keyPattern": {
+    "regex": "^(auth|paper|slides|orchestra|community|billing|pdf|common|authz|workspace)\\.([a-zA-Z][a-zA-Z0-9]*)\\.(.+)$",
+    "description": "<domain>.<section>.<element>[.<state>]",
+    "domains": [
+      "auth", "paper", "slides", "orchestra",
+      "community", "billing", "pdf", "common", "authz", "workspace"
+    ],
+    "stateSuffixes": [
+      "error", "loading", "empty", "success", "hint", "tooltip", "label"
+    ]
+  },
+
+  "placeholder": {
+    "regex": "\\{(\\w+)\\}",
+    "format": "{name}",
+    "mustMatchAcrossLocales": true,
+    "description": "同一 key 在所有语言的占位符集合必须一致"
+  },
+
+  "coverage": {
+    "L1": {
+      "locales": ["zh-CN", "en-US"],
+      "requiredRatio": 1.0,
+      "strict": true,
+      "description": "核心语言必须 100% 覆盖，CI 阻断"
+    },
+    "L2": {
+      "locales": [
+        "zh-TW", "zh-HK", "ja-JP", "ko-KR",
+        "fr-FR", "de-DE", "es-ES", "pt-BR", "ru-RU", "ar-EG"
+      ],
+      "requiredRatio": 0.8,
+      "strict": false,
+      "description": "扩展语言目标 80%，暂不阻断"
+    }
+  },
+
+  "fallbackChain": [
+    { "level": 1, "source": "overrides[key]", "desc": "运行时覆盖（最高优先级）" },
+    { "level": 2, "source": "locales[locale][key]", "desc": "运行时注册（自定义语言）" },
+    { "level": 3, "source": "BUILTIN[locale][key]", "desc": "平台内置（12 种）" },
+    { "level": 4, "source": "BUILTIN['en-US'][key]", "desc": "英文兜底" },
+    { "level": 5, "source": "key", "desc": "永不 undefined" }
+  ],
+
+  "fallbackNote": "第 4 级兜底英文而非中文 —— 未配全的语言用中文会中英混杂，用英文至少语言一致。",
+
+  "hardcodedDetection": {
+    "enabled": true,
+    "guardId": "G12",
+    "scanJsxTextNodes": true,
+    "scanStringLiterals": true,
+    "unicodeRanges": [
+      { "name": "CJK", "range": "\\u4e00-\\u9fff" },
+      { "name": "HiraganaKatakana", "range": "\\u3040-\\u30ff" },
+      { "name": "Hangul", "range": "\\uac00-\\ud7af" }
+    ],
+    "exclusions": [
+      "**/i18n/messages/**",
+      "**/tests/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/__tests__/**"
+    ]
+  },
+
+  "immutability": {
+    "renamingAllowed": false,
+    "deprecationPrefix": "common.deprecated.",
+    "description": "key 一经发布不可重命名，只能废弃并迁移到 common.deprecated.<key>"
+  }
+}
