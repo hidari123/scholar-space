@@ -1,9 +1,9 @@
 # scholarspace — 项目总纲
 
-> 平台级学术工作空间。13 个独立子项目 + 1 个组装主项目。
+> 平台级学术工作空间。**4+1 独立仓 + 1 个组装主项目**。
 >
-> **状态**：规划阶段（未写业务代码）
-> **文档版本**：v1.0
+> **状态**：M1 样板进行中
+> **文档版本**：v1.1
 > **最后更新**：2026-11-19
 
 ---
@@ -25,6 +25,8 @@
 | 5 | **表面积最小** | 每个包只暴露 `__init__.py` 公开 API，禁止摸内部实现 |
 | 6 | **可替换** | LLM / 存储 / 队列 / 渲染器全部走 Port，可整体换实现 |
 | 7 | **单轨优先** | 每个子项目在投产前完成自研重写，不长期维护双轨 |
+| 8 | **身份与业务分离** | identity 只管「你是谁」；业务数据在别的包，靠事件解耦 |
+| 9 | **身份标识用稳定值** | 微信用 openid 不用昵称 —— 昵称会变 |
 
 ---
 
@@ -48,9 +50,16 @@
 | [MANIFEST.md](./MANIFEST.md) | 文档清单 + 待确认项 |
 | [adr/](./adr/) | 架构决策记录 |
 
+**仓内文档**：
+
+| 文档 | 内容 |
+|---|---|
+| [packages/services/README.md](../packages/services/README.md) | ⭐ B 类底座服务 + **管理员体系**设计 |
+| [cli/docs/plugin.md](../cli/docs/plugin.md) | ⭐ 写一个 CLI 插件 |
+
 ---
 
-## 3. 项目总表
+## 3. 项目总表（4+1+1）
 
 ### 3.1 主项目（组装层，零业务代码）
 
@@ -58,33 +67,49 @@
 scholarspace/
 ├── packages/
 │   ├── conventions/     规范唯一来源（可执行配置片段）
-│   ├── ui/              设计系统（AntD 基座 + 品牌主题 + i18n）
-│   └── core/            核心底座
+│   ├── ui/              设计系统（AntD 基座 + 品牌主题 + i18n）⭐npm
+│   ├── core/            共享 Python 底座 ⭐PyPI
+│   └── services/        B 类底座服务
+│       ├── auth/        角色 / 权限 / 内部 JWT / 管理员判定
+│       ├── llm/         多模型接入 / 路由 / 成本核算
+│       ├── storage/     对象存储抽象
+│       ├── events/      事件总线 + SSE
+│       ├── billing/     账本 + 额度
+│       └── federation/  跨实例互联
 ├── contracts/           OpenAPI + JSON Schema + i18n schema
-├── apps/                gateway / web / slides-web / orchestra-web / worker
+├── apps/                gateway / web
 ├── infra/               Docker / K8s / 观测 / CI 模板
 ├── docs/adr/            架构决策记录
 ├── tools/codegen/       契约 → 代码
-└── cli/                 项目脚手架
+├── tools/guards/        架构护栏
+├── versions/            兼容矩阵
+└── cli/                 平台工具链（内核 + 插件）
 ```
 
-### 3.2 独立项目（12 个，各自 Git 仓库 + 独立版本 + 独立 CI）
+### 3.2 A 类独立仓（4+1，用户可见，各自 Git 仓库 + 独立版本 + 独立 CI）
 
-| # | 包名 | 中文 | 语言 | 来源 |
+> 全部在 [github.com/hidari123](https://github.com/hidari123) 下。
+
+| # | 包名 | 中文 | 仓库 | 阶段 |
 |---|---|---|---|---|
-| 1 | `@scholarspace/auth` | 鉴权 | Python | ♻️ 重写 |
-| 2 | `@scholarspace/llm` | 模型网关 | Python | ♻️ 重写 |
-| 3 | `@scholarspace/storage` | 对象存储 | Python | ♻️ 重写 |
-| 4 | `@scholarspace/events` | 事件总线 | Python | ♻️ 重写 |
-| 5 | `@scholarspace/billing` | 计费账本 | Python | ♻️ 重写 |
-| 6 | `@scholarspace/paper` | 文献研究 | Python | ♻️ 重写 |
-| 7 | `@scholarspace/slides` | 演示文稿引擎 | Python | ♻️ 重写 |
-| 8 | `@scholarspace/orchestra` | 编排引擎 | Python | ♻️ 重写 |
-| 9 | `@scholarspace/community` | 学术社区 | Python | ♻️ 重写 |
-| 10 | `@scholarspace/federation` | ActivityPub 联邦 | Python | 🆕 |
-| 11 | `@scholarspace/pdf-viewer` | PDF 查看器 | TypeScript | ❄️ **冻结中** |
+| 1 | `scholarspace-paper` | 文献研究 | [hidari123/scholarspace-paper](https://github.com/hidari123/scholarspace-paper) | M4 |
+| 2 | `scholarspace-slides` | 演示文稿引擎 | [hidari123/scholarspace-slides](https://github.com/hidari123/scholarspace-slides) | M3 |
+| 3 | `scholarspace-orchestra` | 编排引擎 | [hidari123/scholarspace-orchestra](https://github.com/hidari123/scholarspace-orchestra) | M2 |
+| 4 | `scholarspace-community` | 学术社区 | [hidari123/scholarspace-community](https://github.com/hidari123/scholarspace-community) | M5 |
+| +1 | `scholarspace-identity` | ⭐ 登录注册 | [hidari123/scholarspace-identity](https://github.com/hidari123/scholarspace-identity) | **M1 进行中** |
 
-### 3.3 共享底座（住在主仓，发布成包被独立仓消费）
+### 3.3 B 类底座服务（住主仓 `packages/services/`）
+
+| 包名 | 中文 | 语言 | 阶段 |
+|---|---|---|---|
+| `auth` | 鉴权 + 角色 + 管理员 | Python | M1 |
+| `llm` | 模型网关 | Python | M1 |
+| `storage` | 对象存储 | Python | M1 |
+| `events` | 事件总线 | Python | M1 |
+| `billing` | 计费账本 | Python | M5 |
+| `federation` | ActivityPub 联邦 | Python | M5+ |
+
+### 3.4 共享底座（住在主仓，发布成包被独立仓消费）
 
 | 包名 | 中文 | 语言 | 消费方 | 发布 |
 |---|---|---|---|---|
@@ -97,14 +122,21 @@ scholarspace/
 > 独立仓 clone 出来加个依赖即可用，同时版本受控、不会各造各的。
 > 详见 [12-独立仓与共享UI设计.md](./12-独立仓与共享UI设计.md)。
 
-### 3.4 工具
+### 3.5 工具
 
 | 工具 | 说明 |
 |---|---|
-| `@scholarspace/cli` | 项目脚手架 |
+| `@scholarspace/cli` | 平台工具链 —— 内核命令 + 各仓插件 |
+| `tools/codegen` | 契约 → 代码 + 发布前检查 |
+| `tools/guards` | 架构护栏 |
+
+### 3.6 冻结
+
+| 包 | 状态 |
+|---|---|
+| `scholar-pdf-viewer` | ❄️ **冻结** —— M7 收编，**不要动** |
 
 ---
-
 ## 4. 依赖拓扑
 
 ```
@@ -135,6 +167,10 @@ scholarspace/
                     │
                     ▼
               orchestra
+
+    +--------------+
+    |  identity    | <-- 独立发出 UserRegistered 事件，谁需要谁订阅
+    +--------------+
 ```
 
 **规则**：
@@ -143,6 +179,7 @@ scholarspace/
 - `slides` 只依赖 `core` + `llm` + `events`，**不依赖** `paper`/`community`（通过 DTO 传入内容）
 - `orchestra` 依赖 `core` + `llm` + `events`
 - `community` 不依赖 `paper`（只通过 ID 引用）
+- **`identity` 不依赖主仓任何东西** —— 它必须能独立复用
 - 跨包禁止摸内部实现
 
 ---
@@ -191,16 +228,16 @@ scholarspace/
 
 ## 6. 路线图（24 周）
 
-| 阶段 | 内容 | 工期 | 轨 |
+| 阶段 | 内容 | 工期 | 状态 |
 |---|---|---|---|
-| **M0 地基** | `conventions` + `ui` + `contracts` + `core` + `cli` | 4 周 | 平台 |
-| **M1 样板** | `auth` + `llm` + `events` | 2 周 | 平台 |
-| **M2** | `orchestra` | 5 周 | 后端 + 前端 |
-| **M3** | `slides` + `slides-web` | 5 周 | 后端 + 前端 |
-| **M4** | `paper` | 4 周 | 后端 |
-| **M5** | `community` + `federation` + `billing` | 4 周 | 后端 |
-| **M6** | `web` + 网关 + worker + 观测 | 3 周 | 前端 + 平台 |
-| **M7** | 旧系统下线 + 数据迁移 + 收编 pdf-viewer | 2 周 | 平台 |
+| **M0 地基** | `conventions` + `ui` + `contracts` + `core` + `cli` + `guards` | 4 周 | ✅ |
+| **M1 样板** | `identity`（独立仓）+ `auth` + `llm` | 2 周 | 🔄 进行中 |
+| **M2** | `orchestra` | 5 周 | ⬜ |
+| **M3** | `slides` | 5 周 | ⬜ |
+| **M4** | `paper` | 4 周 | ⬜ |
+| **M5** | `community` + `federation` + `billing` | 4 周 | ⬜ |
+| **M6** | `web` + 网关 + worker + 观测 | 3 周 | ⬜ |
+| **M7** | 旧系统下线 + 数据迁移 + 收编 pdf-viewer | 2 周 | ⬜ |
 
 详见 [10-迁移路线.md](./10-迁移路线.md)。
 
@@ -224,3 +261,6 @@ scholarspace/
 | 脚手架 | TypeScript CLI（`pnpm dlx`） | ADR-0012 |
 | License 策略 | 全部重写不拷贝；CI license 门禁 | ADR-0013 |
 | 迁移方式 | 双轨并行 + 网关映射，按域灰度 | ADR-0014 |
+| 共享底座发布 | `ui`→npm / `core`→PyPI，住主仓 | ADR-0015 |
+| **仓库结构** | **4+1+1** —— 4 业务仓 + identity + B 类住主仓 | ADR-0016 |
+| **管理员体系** | 名单存自有库 + 签名 header + 强制审计 | ADR-0017 |

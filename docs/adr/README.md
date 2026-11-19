@@ -23,8 +23,33 @@
 | [0013](./0013-license-compliance.md) | License 合规策略（AGPL 隔离）| 已接受 | 2026-11-19 |
 | [0014](./0014-migration-strategy.md) | 双轨并行迁移策略 | 已接受 | 2026-11-19 |
 | [0015](./0015-shared-base-publishing.md) | ⭐ 共享底座的归属与发布通道（GitHub Packages + 主仓）| 已接受 | 2026-11-19 |
+| [0016](./0016-repo-layout-and-identity.md) | ⭐ 仓库结构改为 4+1+1 + identity 独立成仓 | 已接受 | 2026-11-19 |
+| [0017](./0017-admin-system.md) | ⭐ 管理员体系（名单存自有库 + 签名 header + 强制审计）| 已提议 | 2026-11-19 |
 
 > 同名前缀的 `000X-note.md` / `000X-appendix.md` 为索引辅助文件，内容指向对应主文件。
+
+---
+
+## 决策演进脉络
+
+```
+ADR-0001  Polyrepo
+   │
+   ├── ADR-0011  规范以可执行配置承载
+   ├── ADR-0012  脚手架以 TypeScript CLI 实现
+   │
+   ▼
+ADR-0015  共享底座住主仓，发布到 GitHub Packages
+   │
+   ▼
+ADR-0016  仓库结构 4+1+1 ──→ identity 独立成仓（用户要求可复用）
+   │
+   ▼
+ADR-0017  管理员体系 ──→ 补上 nanobuddy 缺的两块（审计 + 身份不可伪造）
+```
+
+**贯穿主线**：**独立仓能独立复用** → 共享底座必须能被别人用 →
+管理员身份不能靠网络隔离保证。
 
 ---
 

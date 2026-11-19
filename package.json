@@ -10,17 +10,19 @@
   },
   "scripts": {
     "setup": "node scripts/dev-setup.mjs",
-    "lint": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" lint",
-    "typecheck": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" typecheck",
-    "test": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" test",
-    "guards": "pnpm --filter @scholarspace/cli guards run",
+    "lint": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" --filter \"./tools/**\" --filter \"./cli\" lint",
+    "typecheck": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" --filter \"./tools/**\" --filter \"./cli\" typecheck",
+    "test": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" --filter \"./tools/**\" --filter \"./cli\" test",
+    "guards": "pnpm --filter @scholarspace/guards build ; node tools/guards/dist/cli.js run",
     "i18n:check": "pnpm --filter @scholarspace/cli i18n check",
     "contract:generate": "pnpm --filter @scholarspace/cli contract generate",
     "contract:diff": "pnpm --filter @scholarspace/cli contract diff",
-    "build": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" build"
+    "build": "pnpm -r --filter \"./packages/**\" --filter \"./apps/**\" --filter \"./tools/**\" --filter \"./cli\" build",
+    "verify": "npm-run-all --sequential lint typecheck test build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.4",
+    "npm-run-all": "^4.1.5",
     "typescript": "^5.9.3"
   }
 }

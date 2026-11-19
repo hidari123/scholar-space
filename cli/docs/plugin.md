@@ -8,10 +8,10 @@
 
 CLI 分两层：
 
-| 层 | 住在哪 | 包含 | 改动影响 |
-|---|---|---|---|
-| **内核** | 主仓 `cli/` | `sync` `check` `new` `verify` `contract` `release` | 所有仓受益 |
-| **插件** | 各独立仓自己 | `deck:new` `post:create` `signup` … | 只影响本仓 |
+| 层       | 住在哪       | 包含                                               | 改动影响   |
+| -------- | ------------ | -------------------------------------------------- | ---------- |
+| **内核** | 主仓 `cli/`  | `sync` `check` `new` `verify` `contract` `release` | 所有仓受益 |
+| **插件** | 各独立仓自己 | `deck:new` `post:create` `signup` …                | 只影响本仓 |
 
 **例子**：
 
@@ -104,11 +104,11 @@ interface PluginContext {
 
 **规则**：
 
-| 规则 | 原因 |
-|---|---|
-| 命令名带 `:` 前缀（`deck:new`）| 避免与内核命令（`new` `sync`）冲突 |
-| 返回 exit code，不要 `process.exit()` | 让 CLI 统一处理 |
-| 用 `context.cwd` 而不是 `process.cwd()` | 便于测试与 `--target` |
+| 规则                                    | 原因                               |
+| --------------------------------------- | ---------------------------------- |
+| 命令名带 `:` 前缀（`deck:new`）         | 避免与内核命令（`new` `sync`）冲突 |
+| 返回 exit code，不要 `process.exit()`   | 让 CLI 统一处理                    |
+| 用 `context.cwd` 而不是 `process.cwd()` | 便于测试与 `--target`              |
 
 ---
 
@@ -181,14 +181,14 @@ CLI 加载的是 **JS**（`.js` / `.mjs`）。TS 源码要先构建：
 
 ## 6. 内核命令速查
 
-| 命令 | 说明 |
-|---|---|
-| `sync --kind python\|typescript` | 同步规范基座到本仓 |
-| `check` | 检查 extends 是否失效 |
-| `new <name> --template <id>` | 创建新项目 |
-| `verify` | 跑完整质量门禁 |
-| `contract validate\|diff\|generate` | 契约操作 |
-| `release check\|bump\|publish\|tag` | 发版操作 |
+| 命令                                | 说明                  |
+| ----------------------------------- | --------------------- |
+| `sync --kind python\|typescript`    | 同步规范基座到本仓    |
+| `check`                             | 检查 extends 是否失效 |
+| `new <name> --template <id>`        | 创建新项目            |
+| `verify`                            | 跑完整质量门禁        |
+| `contract validate\|diff\|generate` | 契约操作              |
+| `release check\|bump\|publish\|tag` | 发版操作              |
 
 ---
 
