@@ -1,0 +1,158 @@
+# scholarspace Core 服务契约
+#
+# 第一个真实服务契约 —— 用于验证 codegen 流水线端到端跑通。
+
+openapi: 3.1.0
+info:
+  title: scholarspace Core API
+  version: 1.0.0
+  description: |
+    核心底座服务 —— 健康检查、配置、品牌、错误码。
+
+    契约生成：见 tools/codegen/README.md
+    客户端使用：见 apps/web/src/api（由 orval 生成，勿手写）
+
+paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      summary: 健康检查
+      tags: [system]
+      responses:
+        '200':
+          description: 服务状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /api/v1/ready:
+    get:
+      operationId: getReady
+      summary: 就绪检查（依赖是否可用）
+      tags: [system]
+      responses:
+        '200':
+          description: 已就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: 未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /api/v1/config/branding:
+    get:
+      operationId: getBranding
+      summary: 获取品牌配置
+      description: |
+        返回当前租户的品牌配置（主色/圆角/密度/模式/Logo）。
+        前端用它初始化 @scholarspace/ui 的 ScholarSpaceProvider。
+      tags: [config]
+      parameters:
+        - name: locale
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 可选 —— 返回该语言下的自定义文案
+      responses:
+        '200':
+          description: 品牌配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandingConfig'
+
+  /api/v1/config/error-codes:
+    get:
+      operationId: getErrorCodes
+      summary: 获取错误码表
+      description: 前端用于把 code 映射到本地化文案。
+      tags: [config]
+      responses:
+        '200':
+          description: 错误码表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codes:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        httpStatus:
+                          type: integer
+
+components:
+  schemas:
+    HealthStatus:
+      $ref: './common.yaml#/components/schemas/HealthStatus'
+
+    BrandingConfig:
+      type: object
+      required: [colorPrimary]
+      description: |
+        品牌配置 —— 契约源自 packages/conventions/theme/brand.schema.json。
+        前端传给 ScholarSpaceProvider 的 brand 属性。
+      additionalProperties: false
+      properties:
+        colorPrimary:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+          description: 品牌主色 → AntD token.colorPrimary
+          examples: ['#611F6A']
+        colors:
+          type: object
+          description: 语义色覆盖
+          additionalProperties: false
+          properties:
+            success: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+            warning: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+            error: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+            info: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        borderRadius:
+          type: number
+          minimum: 0
+          maximum: 24
+          default: 6
+        fontFamily:
+          type: string
+        density:
+          type: string
+          enum: [default, compact]
+          default: default
+        mode:
+          type: string
+          enum: [light, dark, auto]
+          default: auto
+        brandName:
+          type: string
+          maxLength: 64
+        logo:
+          type: object
+          additionalProperties: false
+          required: [light, dark]
+          properties:
+            light: { type: string }
+            dark: { type: string }
+        favicon:
+          type: string
+        messages:
+          type: object
+          description: |
+            租户自定义文案（可选）。
+            key 遵循 `{domain}.{section}.{element}[.{state}]` 规范。
+            缺失的 key 回退到内置文案。
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string

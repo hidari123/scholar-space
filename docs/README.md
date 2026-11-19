@@ -44,6 +44,7 @@
 | [09-脚手架.md](./09-脚手架.md) | scholarspace-cli 设计 |
 | [10-迁移路线.md](./10-迁移路线.md) | 双轨迁移与数据迁移 |
 | **[11-执行计划.md](./11-执行计划.md)** | ⭐ **执行步骤与里程碑** |
+| **[12-独立仓与共享UI设计.md](./12-独立仓与共享UI设计.md)** | ⭐ 独立仓可用性 + 共享 UI 机制（已实测）|
 | [MANIFEST.md](./MANIFEST.md) | 文档清单 + 待确认项 |
 | [adr/](./adr/) | 架构决策记录 |
 
@@ -67,25 +68,36 @@ scholarspace/
 └── cli/                 项目脚手架
 ```
 
-### 3.2 独立项目（13 个，各自 Git 仓库 + 独立版本 + 独立 CI）
+### 3.2 独立项目（12 个，各自 Git 仓库 + 独立版本 + 独立 CI）
 
 | # | 包名 | 中文 | 语言 | 来源 |
 |---|---|---|---|---|
-| 1 | `@scholarspace/core` | 核心底座 | Python | ♻️ 重写 |
-| 2 | `@scholarspace/auth` | 鉴权 | Python | ♻️ 重写 |
-| 3 | `@scholarspace/llm` | 模型网关 | Python | ♻️ 重写 |
-| 4 | `@scholarspace/storage` | 对象存储 | Python | ♻️ 重写 |
-| 5 | `@scholarspace/events` | 事件总线 | Python | ♻️ 重写 |
-| 6 | `@scholarspace/billing` | 计费账本 | Python | ♻️ 重写 |
-| 7 | `@scholarspace/paper` | 文献研究 | Python | ♻️ 重写 |
-| 8 | `@scholarspace/slides` | 演示文稿引擎 | Python | ♻️ 重写 |
-| 9 | `@scholarspace/orchestra` | 编排引擎 | Python | ♻️ 重写 |
-| 10 | `@scholarspace/community` | 学术社区 | Python | ♻️ 重写 |
-| 11 | `@scholarspace/federation` | ActivityPub 联邦 | Python | 🆕 |
-| 12 | `@scholarspace/ui` | 共享组件库 | TypeScript | ♻️ 重写 |
-| 13 | `@scholarspace/pdf-viewer` | PDF 查看器 | TypeScript | ❄️ **冻结中** |
+| 1 | `@scholarspace/auth` | 鉴权 | Python | ♻️ 重写 |
+| 2 | `@scholarspace/llm` | 模型网关 | Python | ♻️ 重写 |
+| 3 | `@scholarspace/storage` | 对象存储 | Python | ♻️ 重写 |
+| 4 | `@scholarspace/events` | 事件总线 | Python | ♻️ 重写 |
+| 5 | `@scholarspace/billing` | 计费账本 | Python | ♻️ 重写 |
+| 6 | `@scholarspace/paper` | 文献研究 | Python | ♻️ 重写 |
+| 7 | `@scholarspace/slides` | 演示文稿引擎 | Python | ♻️ 重写 |
+| 8 | `@scholarspace/orchestra` | 编排引擎 | Python | ♻️ 重写 |
+| 9 | `@scholarspace/community` | 学术社区 | Python | ♻️ 重写 |
+| 10 | `@scholarspace/federation` | ActivityPub 联邦 | Python | 🆕 |
+| 11 | `@scholarspace/pdf-viewer` | PDF 查看器 | TypeScript | ❄️ **冻结中** |
 
-### 3.3 工具
+### 3.3 共享底座（住在主仓，发布成包被独立仓消费）
+
+| 包名 | 中文 | 语言 | 消费方 | 发布 |
+|---|---|---|---|---|
+| `@scholarspace/ui` | 共享组件库 | TypeScript | 所有前端子项目 | npm（私有源）|
+| `scholarspace-core` | 核心底座 | Python | 所有后端子项目 | PyPI（私有源）|
+| `packages/conventions` | 规范唯一来源 | 配置 | 所有子项目 | `cli sync` 复制 |
+| `contracts/` | 契约唯一来源 | OpenAPI | 所有子项目 | codegen 生成 |
+
+> ⚠️ **`ui` 与 `core` 不是独立仓**，而是住在主仓、以发布包形式被消费 ——
+> 独立仓 clone 出来加个依赖即可用，同时版本受控、不会各造各的。
+> 详见 [12-独立仓与共享UI设计.md](./12-独立仓与共享UI设计.md)。
+
+### 3.4 工具
 
 | 工具 | 说明 |
 |---|---|

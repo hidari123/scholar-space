@@ -1,0 +1,188 @@
+# scholarspace 公共契约 —— 响应信封、分页、错误码
+#
+# 所有服务的 OpenAPI 都引用本文件。
+# 契约是唯一真相源（ADR-0011 原则 2：契约先行）。
+#
+# ⚠️ 本文件用 $ref 组合，不重复定义。
+
+openapi: 3.1.0
+info:
+  title: scholarspace Common Schemas
+  version: 1.0.0
+  description: |
+    公共契约片段 —— 统一响应信封、游标分页、错误码。
+
+    由 `tools/codegen` 生成到各服务的客户端与模型。
+    **禁止手写 DTO** —— 改契约 → 重新生成 → 类型错误在编译期暴露。
+
+paths: {}
+
+components:
+  schemas:
+    # ══════════════════════════════════════════════════════
+    # 统一响应信封
+    # ══════════════════════════════════════════════════════
+    APIResponse:
+      type: object
+      required: [code, message, request_id, timestamp]
+      additionalProperties: false
+      properties:
+        code:
+          type: integer
+          description: 业务错误码。0 = 成功。其余见 error-codes.json。
+          default: 0
+          examples: [0]
+        message:
+          type: string
+          description: 人类可读消息。优先为 i18n key（common.error.*）。
+          default: ok
+        data:
+          description: 业务数据。失败时为 null。
+          default: null
+        request_id:
+          type: string
+          description: 请求追踪 ID，与日志、链路追踪一致
+          minLength: 1
+        timestamp:
+          type: string
+          format: date-time
+          description: UTC 时间戳
+
+    # ══════════════════════════════════════════════════════
+    # 游标分页
+    # ══════════════════════════════════════════════════════
+    PageResult:
+      type: object
+      required: [items, has_more]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          description: 当前页数据
+        next_cursor:
+          type: [string, 'null']
+          description: 下一页游标。null = 没有下一页。
+          default: null
+        has_more:
+          type: boolean
+          description: 是否还有更多
+          default: false
+        total:
+          type: [integer, 'null']
+          description: 总数（可选，游标分页下通常不返回）
+          default: null
+
+    # ══════════════════════════════════════════════════════
+    # 错误响应
+    # ══════════════════════════════════════════════════════
+    ErrorResponse:
+      type: object
+      required: [code, message, request_id, timestamp]
+      properties:
+        code:
+          type: integer
+          description: 错误码。见 packages/conventions/api/error-codes.json
+          examples: [40401]
+        message:
+          type: string
+          description: 错误消息（优先 i18n key）
+          examples: [common.error.notFound]
+        data:
+          type: object
+          additionalProperties: true
+          description: 错误详情（如字段级校验错误）
+          default: null
+        request_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    # ══════════════════════════════════════════════════════
+    # 健康检查
+    # ══════════════════════════════════════════════════════
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        version:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [ok, degraded, down]
+
+    # ══════════════════════════════════════════════════════
+    # 通用参数
+    # ══════════════════════════════════════════════════════
+    CursorParam:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 上一页返回的 next_cursor（不透明字符串）
+
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+
+  parameters:
+    Cursor:
+      $ref: '#/components/schemas/CursorParam'
+    Limit:
+      $ref: '#/components/schemas/LimitParam'
+
+  responses:
+    BadRequest:
+      description: 参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: 未认证
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: 无权限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: 资源冲突
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: 请求过于频繁
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: 服务内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
