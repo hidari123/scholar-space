@@ -1,0 +1,29 @@
+{
+  // ⚠️ 必须指定用工作区的 TypeScript，不要用 VSCode 内置的。
+  //
+  // 原因：VSCode 1b6a188127 内置的是 TypeScript 6.0.3，
+  // 而 6.0 起 `baseUrl` 会被标记废弃（TS5101）——
+  // 即使我们的 tsconfig 根本没写 baseUrl，
+  // 内置 TS 也会用旧缓存的 base 文件内容报这个错。
+  //
+  // 正确做法：让 TS Server 用仓库里装的 typescript（5.9.3）。
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // 强制用工作区的 TS 版本
+  "typescript.disableAutomaticTypeAcquisition": true,
+
+  // ⚠️ 格式化：让 VSCode 用 Biome 而不是内置 formatter
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
+}
