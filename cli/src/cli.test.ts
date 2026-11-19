@@ -4,11 +4,10 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseArgs, TEMPLATES } from './cli';
-import { PYTHON_SYNC_ITEMS, TYPESCRIPT_SYNC_ITEMS } from './sync';
+import { parseArgs } from './cli';
+import { PYTHON_SYNC_ITEMS, TYPESCRIPT_SYNC_ITEMS } from './core/sync';
 import { render, toPascalCase, toSnakeCase } from './templates';
-import { pythonServiceTemplate } from './templates/python-service';
-import { tsPackageTemplate } from './templates/ts-package';
+import { TEMPLATES } from './templates/index';
 
 describe('parseArgs', () => {
   it('解析命令与位置参数', () => {
@@ -67,7 +66,7 @@ describe('templates', () => {
   });
 
   it('python 模板覆盖四层结构', () => {
-    const paths = pythonServiceTemplate.files.map((file) => file.path);
+    const paths = TEMPLATES['python-service']?.files.map((file) => file.path) ?? [];
     expect(paths.some((path) => path.includes('domain/'))).toBe(true);
     expect(paths.some((path) => path.includes('application/'))).toBe(true);
     expect(paths.some((path) => path.includes('infrastructure/'))).toBe(true);
@@ -75,13 +74,15 @@ describe('templates', () => {
   });
 
   it('python 模板含 import-linter 契约', () => {
-    const setupCfg = pythonServiceTemplate.files.find((file) => file.path === 'setup.cfg');
+    const setupCfg = TEMPLATES['python-service']?.files.find((file) => file.path === 'setup.cfg');
     expect(setupCfg?.content).toContain('G1 layers');
     expect(setupCfg?.content).toContain('G2 domain layer has zero external dependencies');
   });
 
   it('python 模板的 pyproject 指向本地同步副本', () => {
-    const pyproject = pythonServiceTemplate.files.find((file) => file.path === 'pyproject.toml');
+    const pyproject = TEMPLATES['python-service']?.files.find(
+      (file) => file.path === 'pyproject.toml',
+    );
     // ⚠️ 必须指向本地副本 —— 子仓 CI 独立 checkout 时主仓路径不存在
     expect(pyproject?.content).toContain('extend = "./ruff.toml"');
     expect(pyproject?.content).not.toContain('../../packages/conventions');
@@ -100,23 +101,23 @@ describe('templates', () => {
   });
 
   it('ts 模板的 tsconfig 指向本地副本', () => {
-    const tsconfig = tsPackageTemplate.files.find((file) => file.path === 'tsconfig.json');
+    const tsconfig = TEMPLATES['ts-package']?.files.find((file) => file.path === 'tsconfig.json');
     expect(tsconfig?.content).toContain('"./tsconfig.base.json"');
   });
 
   it('ts 模板的 biome 指向本地副本', () => {
-    const biome = tsPackageTemplate.files.find((file) => file.path === 'biome.json');
+    const biome = TEMPLATES['ts-package']?.files.find((file) => file.path === 'biome.json');
     expect(biome?.content).toContain('"./biome.base.json"');
   });
 
   it('ts 模板不含 antd 直接依赖', () => {
-    const manifest = tsPackageTemplate.files.find((file) => file.path === 'package.json');
+    const manifest = TEMPLATES['ts-package']?.files.find((file) => file.path === 'package.json');
     expect(manifest?.content).toContain('@scholarspace/ui');
     expect(manifest?.content).not.toContain('"antd"');
   });
 
   it('ts 模板含 publishConfig', () => {
-    const manifest = tsPackageTemplate.files.find((file) => file.path === 'package.json');
+    const manifest = TEMPLATES['ts-package']?.files.find((file) => file.path === 'package.json');
     expect(manifest?.content).toContain('npm.pkg.github.com');
     expect(manifest?.content).toContain('restricted');
   });
@@ -130,7 +131,6 @@ describe('templates', () => {
   it('模板文件路径的占位符可被正确渲染', () => {
     for (const template of Object.values(TEMPLATES)) {
       for (const file of template.files) {
-        // 路径里的占位符必须在渲染后消失
         const rendered = render(file.path, {
           name: 'demo-svc',
           packageName: 'demo_svc',
@@ -154,22 +154,22 @@ describe('templates', () => {
       }
     }
   });
-});
 
-describe('template file integrity', () => {
   it('python 模板的 py.typed 是空文件', () => {
-    const pyTyped = pythonServiceTemplate.files.find((file) => file.path.includes('py.typed'));
+    const pyTyped = TEMPLATES['python-service']?.files.find((file) =>
+      file.path.includes('py.typed'),
+    );
     expect(pyTyped).toBeDefined();
     expect(pyTyped?.content).toBe('');
   });
 
   it('生成的项目 README 含同步说明引用', () => {
-    const readme = pythonServiceTemplate.files.find((file) => file.path === 'README.md');
+    const readme = TEMPLATES['python-service']?.files.find((file) => file.path === 'README.md');
     expect(readme?.content).toContain('SYNC.md');
   });
 
   it('测试文件用英文函数名', () => {
-    const test = pythonServiceTemplate.files.find((file) => file.path.includes('test_'));
+    const test = TEMPLATES['python-service']?.files.find((file) => file.path.includes('test_'));
     expect(test?.content).toContain('def test_save_returns_id');
     expect(test?.content).not.toMatch(/def test_[^\n]*[\u4e00-\u9fff]/);
   });

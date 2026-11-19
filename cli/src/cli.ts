@@ -1,34 +1,30 @@
 /**
- * `@scholarspace/cli` —— 项目脚手架。
+ * `@scholarspace/cli` —— 平台工具链。
  *
- * 命令：
- *   new <name> --template <id>   创建新项目
- *   sync --kind python|typescript  同步规范基座到目标仓
- *   check                        检查目标仓的 extends 是否失效
- *   list                         列出可用模板
+ * ⚠️ 架构：内核 + 插件
+ *
+ *   内核命令（所有独立仓通用）—— 住主仓，改一次所有仓受益
+ *     new / sync / check / verify / contract / release / compose
+ *
+ *   插件命令（各仓自治）—— 住各仓自己，改 PPT 不影响社区
+ *     slides → deck:new / deck:serve
+ *     identity → signup / login
  *
  * ⚠️ shebang 由 tsup 的 banner 注入。
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-
-import { detectBrokenExtends, syncConventions, writeLocalExtendsGuide } from './sync';
-import { render, type Template, type TemplateVars, toSnakeCase } from './templates';
-import { pythonServiceTemplate } from './templates/python-service';
-import { tsPackageTemplate } from './templates/ts-package';
-
-/** 全部模板。 */
-export const TEMPLATES: Record<string, Template> = {
-  [pythonServiceTemplate.id]: pythonServiceTemplate,
-  [tsPackageTemplate.id]: tsPackageTemplate,
-};
+import { resolve } from 'node:path';
+import { runNew } from './commands/new';
+import { runCheck, runSync } from './commands/sync-commands';
+import { type Command, type CommandContext, KERNEL_COMMANDS } from './core/command';
+import { discoverPlugins, type PluginCommand } from './core/plugin';
+import { TEMPLATES } from './templates/index';
 
 const log = {
-  info: (message: string) => console.log(`\x1b[36m›\x1b[0m ${message}`),
   ok: (message: string) => console.log(`\x1b[32m✓\x1b[0m ${message}`),
   warn: (message: string) => console.log(`\x1b[33m!\x1b[0m ${message}`),
   err: (message: string) => console.error(`\x1b[31m✗\x1b[0m ${message}`),
+  info: (message: string) => console.log(`\x1b[36m›\x1b[0m ${message}`),
   step: (message: string) => console.log(`\n\x1b[1m▸ ${message}\x1b[0m`),
 };
 
@@ -66,116 +62,86 @@ export function parseArgs(argv: string[]): {
 }
 
 /**
- * 创建新项目。
- *
- * @param sourceRoot 主仓根（用于同步规范基座）
+ * 内置命令表 —— sync / check 走独立模块（它们依赖 sync.ts）。
  */
-export function runNew(
-  name: string,
-  templateId: string,
-  targetRoot: string,
-  vars: Partial<TemplateVars> = {},
-  sourceRoot: string = process.cwd(),
-): number {
-  const template = TEMPLATES[templateId];
-  if (!template) {
-    log.err(`未知模板：${templateId}`);
-    log.info(`可用模板：${Object.keys(TEMPLATES).join(', ')}`);
-    return 1;
-  }
+const BUILTIN_COMMANDS: Command[] = [
+  {
+    name: 'sync',
+    describe: '同步规范基座到目标仓',
+    usage: 'scholarspace-cli sync --kind python|typescript [--target <dir>]',
+    run(args, context) {
+      const kind = args.includes('--kind') ? args[args.indexOf('--kind') + 1] : 'python';
+      return runSync(
+        context.projectRoot,
+        context.target,
+        kind === 'typescript' ? 'typescript' : 'python',
+      );
+    },
+  },
+  {
+    name: 'check',
+    describe: '检查 extends 引用是否失效',
+    usage: 'scholarspace-cli check [--target <dir>]',
+    run(_args, context) {
+      return runCheck(context.target);
+    },
+  },
+  {
+    name: 'new',
+    describe: '创建新项目（含规范基座同步）',
+    usage: 'scholarspace-cli new <name> --template <id>',
+    run(args, context) {
+      const name = args[0];
+      if (!name) {
+        log.err('缺少项目名');
+        return 1;
+      }
+      const templateId = args.includes('--template')
+        ? args[args.indexOf('--template') + 1]
+        : 'python-service';
+      const overrides: Record<string, string> = {};
+      if (args.includes('--description')) {
+        overrides.description = args[args.indexOf('--description') + 1] ?? '';
+      }
+      return runNew(
+        name,
+        templateId ?? 'python-service',
+        context.target,
+        overrides,
+        context.projectRoot,
+      );
+    },
+  },
+];
 
-  const projectDir = join(targetRoot, name);
-  if (existsSync(projectDir)) {
-    log.err(`目标已存在：${projectDir}`);
-    return 1;
-  }
+/**
+ * 帮助。
+ */
+export function runHelp(plugins: PluginCommand[] = []): number {
+  console.log(`
+scholarspace-cli —— 平台工具链
 
-  log.step(`创建 ${name}（模板：${template.name}）`);
+用法：
+  scholarspace-cli <命令> [参数] [--target <目录>]
 
-  const fullVars: TemplateVars = {
-    name,
-    packageName: toSnakeCase(name),
-    scopeName: `@scholarspace/${name}`,
-    description: `${name} —— scholarspace 子项目`,
-    ...vars,
-  };
+内核命令（所有独立仓通用）：
+${BUILTIN_COMMANDS.concat(KERNEL_COMMANDS)
+  .map((command) => `  ${command.name.padEnd(10)} ${command.describe}`)
+  .join('\n')}
 
-  let count = 0;
-  for (const file of template.files) {
-    const relativePath = render(file.path, fullVars);
-    const targetPath = join(projectDir, relativePath);
-
-    mkdirSync(dirname(targetPath), { recursive: true });
-    writeFileSync(targetPath, render(file.content, fullVars), 'utf8');
-    count += 1;
-  }
-
-  log.ok(`已生成 ${count} 个文件 → ${projectDir}`);
-
-  // 同步规范基座 —— 让子仓 CI 不依赖主仓在场
-  const kind = template.language === 'python' ? 'python' : 'typescript';
-  const syncResult = syncConventions(sourceRoot, projectDir, kind);
-  if (syncResult.copied.length > 0) {
-    log.ok(`已同步规范基座：${syncResult.copied.join(', ')}`);
-  } else if (syncResult.failed.length > 0) {
-    log.warn('规范基座同步失败 —— 手动执行 `cli sync` 补齐');
-  }
-  writeLocalExtendsGuide(projectDir, kind);
-
-  log.step('后续步骤');
-  for (const command of template.verifyCommands) {
-    console.log(`    ${command}`);
-  }
-
+${
+  plugins.length > 0
+    ? `插件命令（本仓提供）：
+${plugins.map((command) => `  ${command.name.padEnd(10)} ${command.describe}`).join('\n')}\n`
+    : ''
+}
+选项：
+  --target <dir>       目标目录（默认当前目录）
+  --kind <kind>        python | typescript
+  --template <id>      模板 ID（见 list）
+  --description <d>    项目描述
+`);
   return 0;
-}
-
-/**
- * 同步规范基座到目标仓。
- */
-export function runSync(
-  sourceRoot: string,
-  targetRoot: string,
-  kind: 'python' | 'typescript',
-): number {
-  log.step(`同步规范基座（${kind}）→ ${targetRoot}`);
-
-  const result = syncConventions(sourceRoot, targetRoot, kind);
-
-  for (const failure of result.failed) {
-    log.err(failure);
-  }
-
-  if (result.changed) {
-    log.ok(`已更新：${result.copied.join(', ')}`);
-  } else {
-    log.ok('已是最新，无需变更');
-  }
-
-  writeLocalExtendsGuide(targetRoot, kind);
-
-  return result.failed.length > 0 ? 1 : 0;
-}
-
-/**
- * 检查 extends 是否失效。
- */
-export function runCheck(targetRoot: string): number {
-  log.step(`检查 extends 引用 → ${targetRoot}`);
-
-  const problems = detectBrokenExtends(targetRoot);
-
-  if (problems.length === 0) {
-    log.ok('extends 引用全部有效');
-    return 0;
-  }
-
-  for (const problem of problems) {
-    log.err(problem);
-  }
-  log.err(`发现 ${problems.length} 个失效的 extends 引用`);
-  log.info('修复：npx @scholarspace/cli sync --kind python|typescript');
-  return 1;
 }
 
 /**
@@ -190,87 +156,66 @@ export function runList(): number {
 }
 
 /**
- * 帮助。
- */
-export function runHelp(): number {
-  console.log(`
-scholarspace-cli —— 项目脚手架
-
-用法：
-  scholarspace-cli new <name> --template <id>       创建新项目
-  scholarspace-cli sync --kind <kind> --target <d> 同步规范基座
-  scholarspace-cli check --target <d>              检查 extends 是否失效
-  scholarspace-cli list                            列出可用模板
-
-选项：
-  --template <id>   模板 ID（见 list）
-  --kind <kind>     python | typescript
-  --target <dir>    目标目录（默认当前目录）
-  --description <d> 项目描述
-`);
-  return 0;
-}
-
-/**
  * 命令分发。
  */
-export function main(argv: string[]): number {
+export async function main(argv: string[]): Promise<number> {
   const { command, positional, flags } = parseArgs(argv);
 
   const targetRoot = typeof flags.target === 'string' ? resolve(flags.target) : process.cwd();
-
   // ⚠️ ESM 里没有 __dirname —— 用 import.meta.dirname（Node 20.11+）
-  //    主仓根 = cli/dist/../..  →  cli/ 的上一级
-  const sourceRoot = resolve(import.meta.dirname, '..', '..');
+  const projectRoot = resolve(import.meta.dirname, '..', '..');
 
-  switch (command) {
-    case 'new': {
-      const name = positional[0];
-      if (!name) {
-        log.err('缺少项目名');
-        return 1;
+  const context: CommandContext = {
+    cwd: process.cwd(),
+    projectRoot,
+    target: targetRoot,
+  };
+
+  // 插件发现 —— 失败降级，不阻断
+  const plugins: PluginCommand[] = [];
+  try {
+    const loaded = await discoverPlugins(context.cwd, projectRoot);
+    for (const plugin of loaded) {
+      if (plugin.error) {
+        log.warn(`插件 ${plugin.provider} 加载失败：${plugin.error}`);
+        continue;
       }
-      const templateId = typeof flags.template === 'string' ? flags.template : 'python-service';
-      const overrides: Partial<TemplateVars> = {};
-      if (typeof flags.description === 'string') {
-        overrides.description = flags.description;
-      }
-      return runNew(name, templateId, targetRoot, overrides, sourceRoot);
+      plugins.push(...plugin.commands.values());
     }
-
-    case 'sync': {
-      const kind = flags.kind === 'typescript' ? 'typescript' : 'python';
-      return runSync(sourceRoot, targetRoot, kind);
-    }
-
-    case 'check':
-      return runCheck(targetRoot);
-
-    case 'list':
-      return runList();
-
-    default:
-      // 含 'help' 与未知命令
-      return runHelp();
+  } catch (error) {
+    log.warn(`插件发现失败：${error instanceof Error ? error.message : String(error)}`);
   }
-}
 
-/**
- * 判断当前模块是否作为入口被执行。
- *
- * ⚠️ 不能用 `import.meta.url.endsWith(process.argv[1])` ——
- *    tsup 打包后入口文件与 chunk 分开，这种比较不可靠。
- *    改用「文件名匹配」：入口文件名固定为 cli.js / cli.mjs。
- */
-function isMainModule(): boolean {
-  const entry = process.argv[1];
-  if (!entry) return false;
+  if (command === 'list') {
+    return runList();
+  }
 
-  const fileName = entry.replace(/\\/g, '/').split('/').pop() ?? '';
-  return fileName === 'cli.js' || fileName === 'cli.mjs';
+  if (command === 'help' || command === '--help' || command === '-h') {
+    return runHelp(plugins);
+  }
+
+  // ① 内置命令
+  const builtin = BUILTIN_COMMANDS.concat(KERNEL_COMMANDS);
+  const builtinMatch = builtin.find((item) => item.name === command);
+  if (builtinMatch) {
+    return builtinMatch.run(positional, context);
+  }
+
+  // ② 插件命令
+  const pluginMatch = plugins.find((item) => item.name === command);
+  if (pluginMatch) {
+    return pluginMatch.run(positional, context);
+  }
+
+  log.err(`未知命令：${command}`);
+  log.info('用 `scholarspace-cli help` 看可用命令');
+  return 1;
 }
 
 // 直接执行时
-if (isMainModule()) {
-  process.exit(main(process.argv.slice(2)));
+const entry = process.argv[1]?.replace(/\\/g, '/').split('/').pop();
+if (entry === 'cli.js' || entry === 'cli.mjs') {
+  main(process.argv.slice(2)).then((code) => {
+    process.exit(code);
+  });
 }

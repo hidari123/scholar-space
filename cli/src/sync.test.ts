@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { detectBrokenExtends, syncConventions, writeLocalExtendsGuide } from './sync';
+import { detectBrokenExtends, syncConventions, writeLocalExtendsGuide } from './core/sync';
 
 /** 建一个模拟的主仓（带 conventions base 文件）。 */
 function makeSourceRoot(): string {
