@@ -15,9 +15,17 @@ postgres = [
     "sqlalchemy[asyncio]>=2.0",
     "asyncpg>=0.30",
 ]
+# ⚠️ HTTP 依赖是**可选** —— 领域层与应用层不需要 FastAPI。
+#    只有跑 HTTP 接口层时才装。
+http = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "uvicorn[standard]>=0.32",
+]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
+    "httpx>=0.28",
     "ruff>=0.9",
     "mypy>=1.14",
 ]

@@ -56,7 +56,7 @@ X-Scholar-Sig: <HMAC-SHA256(user_id:roles:ts, GATEWAY_SECRET)>
 
 ```python
 scope = TenantScope(tenant_id="tenant-a")
-scope.require(target_tenant_id)   # 跨租户 → PermissionError
+scope.require(target_tenant_id)  # 跨租户 → PermissionError
 ```
 
 ⚠️ 不能只靠应用层过滤 —— 漏一个 `WHERE tenant_id = ?` 就是越权。
@@ -72,7 +72,7 @@ scope.require(target_tenant_id)   # 跨租户 → PermissionError
 
 ```python
 grant = await grants.grant(grant)
-await audit.record(AdminAction(...))   # ← 用例内部，调用方绕不过
+await audit.record(AdminAction(...))  # ← 用例内部，调用方绕不过
 ```
 
 ⚠️ nanobuddy 的管理员操作**没要求填原因** —— 出了事只能靠翻日志猜。
@@ -85,7 +85,7 @@ class AdminAction:
     actor_id: UUID
     target_type: str
     target_id: str
-    reason: str            # ⚠️ 必填 —— 空则抛 ValueError
+    reason: str  # ⚠️ 必填 —— 空则抛 ValueError
     result: AdminActionResult
     metadata: dict[str, Any]
     occurred_at: datetime
@@ -131,8 +131,62 @@ src/scholar_auth/
 │   └── use_cases.py      grant_role / revoke_role / suspend_user / ...
 ├── infrastructure/
 │   └── memory.py         内存实现（开发/测试）
-└── interfaces/           HTTP 层（待建）
+└── interfaces/           HTTP 层
+    ├── app.py            FastAPI 应用工厂
+    ├── dependencies.py   网关签名校验 + 角色依赖
+    ├── schemas.py        请求/响应模型（Pydantic）
+    └── routers/admin.py  管理员端点
 ```
+
+---
+
+## HTTP 接口层
+
+### 端点
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| POST | `/api/admin/roles` | 平台/租户管理员 | 授予角色 |
+| DELETE | `/api/admin/roles` | 平台/租户管理员 | 撤销角色 |
+| POST | `/api/admin/users/{id}/suspend` | 平台/租户管理员 | 停用用户 |
+| POST | `/api/admin/users/{id}/reinstate` | 平台/租户管理员 | 解封用户 |
+| GET | `/api/admin/admins` | **仅平台管理员** | 列出管理员 |
+| GET | `/api/admin/audit` | **仅平台管理员** | 查询审计 |
+| GET | `/health` | 公开 | 健康检查 |
+
+⚠️ **健康检查不要求签名** —— 负载均衡器探活没有签名，
+要求签名会导致探活失败。
+
+### 两道权限检查
+
+```
+请求 → require_principal（验签）→ require_roles（查角色）→ 路由 → 用例内部再查一次
+         ↑ 挡住伪造                 ↑ 挡住非管理员        ↑ 挡住越权
+```
+
+⚠️ **两道都要有** ——
+依赖层挡住「不是管理员」，用例层挡住「是管理员但操作越权的目标」。
+
+### 用法
+
+```python
+from scholar_auth.interfaces import create_app
+
+app = create_app()
+```
+
+⚠️ 生产环境要用 `dependency_overrides` 换成 PostgreSQL 仓储，
+路由代码一行都不用改（端口在应用层，实现在基础设施层）。
+
+### 配置
+
+```bash
+export SCHOLARSPAWN_GATEWAY_SECRET="<网关密钥>"
+```
+
+⚠️ **没有默认值** —— 忘记配置直接抛异常，
+不是用空字符串。空密钥意味着「谁都能算出合法签名」，
+那比没有鉴权更危险（看起来有鉴权，实际没有）。
 
 ---
 
@@ -140,7 +194,10 @@ src/scholar_auth/
 
 ```python
 from scholar_auth import (
-    GrantRoleRequest, RoleName, build_principal_for, grant_role,
+    GrantRoleRequest,
+    RoleName,
+    build_principal_for,
+    grant_role,
 )
 
 # 从存储构造主体

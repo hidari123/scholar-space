@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 __all__ = ["AdminAction", "AdminActionResult", "AdminActionType", "AuditRecord"]
 
@@ -96,6 +96,12 @@ class AdminAction:
 
     #: 发生时间
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    #: ⚠️ 记录 ID —— 让外部可以精确引用一条审计记录。
+    #:
+    #:    ⚠️ 用 `field(default_factory=uuid4)` 而不是 `UUID(int=0)` ——
+    #:       后者每次都一样，等于没有 ID。
+    id: UUID = field(default_factory=uuid4)
 
     def __post_init__(self) -> None:
         """校验 —— reason 不能为空。
