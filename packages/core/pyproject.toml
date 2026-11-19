@@ -1,0 +1,59 @@
+[project]
+name = "scholarspace-core"
+version = "0.1.0"
+description = "scholarspace 共享 Python 底座 —— 配置/日志/错误/存储抽象"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Proprietary" }
+
+# ⚠️ 这是一个「共享底座」包，不是独立仓。
+#    它住在主仓，以发布包形式被 12 个独立后端子项目消费。
+#    详见 docs/12-独立仓与共享UI设计.md
+
+dependencies = [
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "structlog>=24.4",
+    "typing-extensions>=4.12",
+]
+
+[project.optional-dependencies]
+# 基础设施实现 —— 按需安装，避免拖慢纯领域使用方
+db = [
+    "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.14",
+    "asyncpg>=0.30",
+]
+storage = [
+    "minio>=7.2",
+    "boto3>=1.35",
+]
+redis = [
+    "redis[hiredis]>=5.2",
+]
+http = [
+    "httpx>=0.28",
+]
+all = [
+    "scholarspace-core[db,storage,redis,http]",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scholar_core"]
+
+[tool.ruff]
+extend = "../../packages/conventions/python/ruff.toml"
+
+# ⚠️ mypy 不支持 pyproject.toml 的 extends —— 只支持 .ini 文件的 include。
+#    见 mypy.ini（本文件）
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+addopts = "-ra --strict-markers --tb=short"
