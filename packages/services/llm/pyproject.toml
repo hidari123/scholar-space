@@ -1,0 +1,45 @@
+[project]
+name = "scholarspace-llm"
+version = "0.1.0"
+description = "scholarspace LLM 服务 —— 多模型接入 / 内容语言 / 结构化输出"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Proprietary" }
+
+# ⚠️ 领域层零依赖 —— 只有基础设施层需要外部库。
+#    这与 auth 服务一样的原则：领域可复用。
+dependencies = []
+
+[project.optional-dependencies]
+# ⚠️ httpx 是**可选** —— 领域层与应用层不需要它。
+#    只有真正要发 HTTP 请求时才装。
+http = [
+    "httpx>=0.28",
+]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.9",
+    "mypy>=1.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scholar_llm"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/scholar_llm", "README.md"]
+
+[tool.ruff]
+extend = "./ruff.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+addopts = "-ra --strict-markers --tb=short"
