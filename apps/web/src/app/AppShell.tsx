@@ -28,6 +28,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { SettingsPanel } from '../components/SettingsPanel';
+import { SITES, siteUrl } from '../data/queries';
 
 /**
  * 应用外壳。
@@ -38,18 +39,17 @@ export function AppShell() {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // ⚠️ **导航项放在组件里** —— 文案要过 t()。
+  // ⚠️ **导航项来自 `SITES` 清单** ——
+  //    单一真相源，工作台和工作台用同一份。
   //
-  // ⚠️ **`href` 为空的项暂时只留在主仓** ——
-  //    各独立站还没部署，URL 还没定。
-  //    配好了就能跳转。
+  // ⚠️ **文案走 i18n** —— `site.labelKey` 指向各站的文案表。
   const navItems = [
     { key: '/', label: t('app.nav.dashboard'), href: '' },
-    { key: '/papers', label: t('app.nav.papers'), href: '' },
-    { key: '/slides', label: t('app.nav.slides'), href: '' },
-    { key: '/orchestra', label: t('app.nav.orchestra'), href: '' },
-    { key: '/community', label: t('app.nav.community'), href: '' },
-    { key: '/identity', label: t('app.nav.identity'), href: '' },
+    ...SITES.map((site) => ({
+      key: `/${site.id}`,
+      label: t(site.labelKey),
+      href: siteUrl(site.id),
+    })),
   ];
 
   // ⚠️ **选中项按最长前缀匹配** ——
@@ -90,7 +90,7 @@ export function AppShell() {
               label: item.label,
               onClick: () => {
                 // ⚠️ **有独立站地址就跳转，没有就留在主仓** ——
-                //    等各站部署好，填上 URL 即可。
+                //    等各站部署好，填上环境变量即可。
                 if (item.href) {
                   window.open(item.href, '_blank', 'noopener');
                   return;

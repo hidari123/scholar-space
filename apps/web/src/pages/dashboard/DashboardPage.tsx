@@ -54,15 +54,16 @@ export function DashboardPage() {
       >
         <Row gutter={[16, 16]}>
           {SITES.map((site) => {
-            const live = status.data?.find((item) => item.site === site.site);
+            const live = status.data?.find((item) => item.id === site.id);
 
             return (
-              <Col xs={24} md={12} lg={8} key={site.site}>
+              <Col xs={24} md={12} lg={8} key={site.id}>
                 <Card
                   size="small"
                   title={
                     <Space>
-                      <span>{site.label}</span>
+                      {/* ⚠️ **文案走 i18n** —— 不硬编码中文 */}
+                      <span>{t(site.labelKey)}</span>
                       <Badge
                         status={live?.available ? 'success' : 'default'}
                         text={
@@ -73,18 +74,18 @@ export function DashboardPage() {
                       />
                     </Space>
                   }
-                  extra={<Tag>{site.site}</Tag>}
+                  extra={<Tag>{site.id}</Tag>}
                 >
                   <Flex vertical gap="small">
                     <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                      {t('app.dashboard.site.description', { label: site.label })}
+                      {t('app.dashboard.site.description', { label: t(site.labelKey) })}
                     </Typography.Text>
                     <div>
                       <Button
                         type="primary"
                         disabled={!live?.available}
                         onClick={() => {
-                          if (site.url) window.open(site.url, '_blank', 'noopener');
+                          if (live?.url) window.open(live.url, '_blank', 'noopener');
                         }}
                       >
                         {t('app.dashboard.site.open')}
