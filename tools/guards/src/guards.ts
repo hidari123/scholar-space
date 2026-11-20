@@ -68,6 +68,45 @@ export function walkFiles(dir: string, extensions: string[]): string[] {
   return results;
 }
 
+/**
+ * 按**精确文件名**找文件（不带扩展名的也要能找）。
+ *
+ * ⚠️ **为什么需要这个** ——
+ *   `walkFiles` 按扩展名过滤，
+ *   但 `.importlinter` 的 `extname()` 返回空串 ——
+ *   它是纯文件名，没有扩展名。
+ *
+ * @param dir 起始目录
+ * @param names 要找的文件名（精确匹配）
+ */
+export function walkFilesByName(dir: string, names: string[]): string[] {
+  if (!existsSync(dir)) return [];
+
+  const skip = new Set([
+    'node_modules',
+    'dist',
+    '.git',
+    '.venv',
+    '__pycache__',
+    'coverage',
+    'build',
+  ]);
+  const results: string[] = [];
+
+  for (const entry of readdirSync(dir)) {
+    if (skip.has(entry)) continue;
+
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      results.push(...walkFilesByName(full, names));
+    } else if (names.includes(entry)) {
+      results.push(full);
+    }
+  }
+
+  return results;
+}
+
 /** 读取文本文件（容错）。 */
 function readText(path: string): string {
   try {
@@ -453,6 +492,22 @@ const BASE_SYNC_EXCEPTIONS: Array<{ path: string; addition: string; reason: stri
 const BASE_SYNC_DIRS = ['packages', 'tools', 'cli', 'examples', 'apps'];
 
 /**
+ * 护栏扫描的目录（相对仓根）。
+ *
+ * ⚠️ **两种布局** ——
+ *   · 主仓：`packages/` `tools/` `cli/` `examples/` `apps/`
+ *   · 独立仓：`libs/`
+ *
+ *   ⚠️ 之前 G27 只扫 `BASE_SYNC_DIRS`，
+ *      结果**独立仓一个文件都没扫到** ——
+ *      护栏「通过了」，但其实什么都没检查。
+ *
+ *      ⚠️ **「假装检查过」比「不检查」更危险** ——
+ *      绿勾给人虚假的安全感。
+ */
+const GUARD_SCAN_DIRS = [...BASE_SYNC_DIRS, 'libs'];
+
+/**
  * 归一化内容以便比较。
  *
  * ⚠️ 要忽略：
@@ -684,7 +739,7 @@ const g26: Guard = {
   run(root) {
     const violations: string[] = [];
 
-    for (const dir of BASE_SYNC_DIRS) {
+    for (const dir of GUARD_SCAN_DIRS) {
       const base = join(root, dir);
       if (!existsSync(base)) continue;
 
@@ -702,8 +757,107 @@ const g26: Guard = {
   },
 };
 
+/**
+ * G27 —— 配置文件必须纯 ASCII。
+ *
+ * ⚠️ **为什么这条护栏存在**：
+ *
+ *   mypy / import-linter 用**系统 locale** 读 .ini 文件。
+ *   Windows 中文环境的 locale 是 GBK ——
+ *   .ini 里只要有一个中文注释，mypy 就直接崩：
+ *
+ *     UnicodeDecodeError: 'gbk' codec can't decode byte 0x80
+ *
+ *   不是「类型检查不生效」，是**工具直接挂掉**。
+ *
+ * ⚠️ **这个坑踩过两次**：
+ *   · 主仓的 `packages/conventions/mypy.ini` —— 已修
+ *   · 独立仓 `scholarspace-slides` —— **又踩了一次**
+ *
+ *   独立仓当时没有护栏，所以「修好了」不等于「不会再犯」。
+ *   这就是护栏存在的意义。
+ *
+ * ⚠️ **只查「用 configparser 读」的文件** ——
+ *   实测（Windows 中文环境）：
+ *
+ *   | 文件            | 解析器                 | 中文会崩吗 |
+ *   |-----------------|------------------------|-----------|
+ *   | `mypy.ini`      | configparser (locale)  | ✅ 崩     |
+ *   | `setup.cfg`     | configparser (locale)  | ✅ 崩     |
+ *   | `.importlinter` | configparser (locale)  | ✅ 崩     |
+ *   | `pytest.ini`    | pytest 自己（UTF-8）  | ❌ 不崩   |
+ *   | `pyproject.toml`| tomllib (UTF-8)       | ❌ 不崩   |
+ *
+ *   ⚠️ **不能「宁可错杀」** ——
+ *   护栏一旦误报，人就会开始习惯性忽略它，
+ *   那时候它就真的没用了。
+ */
+const ASCII_SAFE_CONFIGS = ['mypy.ini', 'setup.cfg', '.importlinter'];
+
+/**
+ * 找出文件里的非 ASCII 字符。
+ *
+ * @returns 非 ASCII 字符列表；纯 ASCII 返回空数组
+ */
+function findNonAscii(content: string): string[] {
+  const found: string[] = [];
+  for (const char of content) {
+    const code = char.codePointAt(0) ?? 0;
+    // ⚠️ BOM（U+FEFF）也算 —— 它同样会让 GBK 解码失败
+    if (code > 127) found.push(char);
+  }
+  return found;
+}
+
+const g27: Guard = {
+  id: 'G27',
+  name: '配置文件必须纯 ASCII',
+  description: 'mypy.ini / setup.cfg 等配置文件用系统 locale 读取，中文注释会导致 GBK 解码失败',
+  severity: 'error',
+  scope: 'packages',
+  run(root) {
+    const violations: string[] = [];
+
+    for (const dir of GUARD_SCAN_DIRS) {
+      const base = join(root, dir);
+      if (!existsSync(base)) continue;
+
+      // ⚠️ 两种找法：
+      //   · 带扩展名的（mypy.ini / setup.cfg）
+      //   · 纯文件名的（.importlinter —— extname() 返回空串）
+      const candidates = [
+        ...walkFiles(base, ['.ini', '.cfg']),
+        ...walkFilesByName(base, ['.importlinter']),
+      ];
+
+      for (const file of candidates) {
+        const name = file.split('\\').pop() ?? file;
+
+        // ⚠️ 只查「用 locale 读」的配置文件
+        if (!ASCII_SAFE_CONFIGS.includes(name)) continue;
+
+        const content = readFileSync(file, 'utf8');
+        const nonAscii = findNonAscii(content);
+
+        if (nonAscii.length === 0) continue;
+
+        const relFile = relative(root, file).replace(/\\/g, '/');
+        const sample = [...new Set(nonAscii)].slice(0, 3).join('');
+
+        violations.push(
+          `${relFile}: 含 ${nonAscii.length} 个非 ASCII 字符（如 "${sample}"）—— ` +
+            `mypy 用系统 locale（GBK）读 .ini，会抛 UnicodeDecodeError 直接崩；` +
+            `配置文件的注释请用英文`,
+        );
+      }
+    }
+
+    return violations;
+  },
+};
+
 /** 全部护栏。 */
-export const GUARDS: Guard[] = [g7, g11, g13, g16, g17, g21, g23, g24, g25, g26];
+export const GUARDS: Guard[] = [g7, g11, g13, g16, g17, g21, g23, g24, g25, g26, g27];
 
 /**
  * 执行全部护栏。

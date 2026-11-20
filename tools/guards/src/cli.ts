@@ -74,6 +74,7 @@ export function main(argv: string[]): number {
   if (command !== 'run') {
     log.err(`未知命令：${command}`);
     log.err('可用命令：run | list');
+    log.err('参数：--only G1,G2（只跑指定护栏）  --root <目录>（检查目录，默认当前目录）');
     return 1;
   }
 
@@ -81,7 +82,11 @@ export function main(argv: string[]): number {
   const onlyValue = onlyIndex !== -1 ? argv[onlyIndex + 1] : undefined;
   const only = onlyValue ? onlyValue.split(',').map((id) => id.trim().toUpperCase()) : undefined;
 
-  const root = resolve(process.cwd());
+  // ⚠️ `--root` 让 CI 能检查**独立仓** ——
+  //    独立仓不在主仓目录里，cwd 不对就扫不到东西。
+  const rootIndex = argv.indexOf('--root');
+  const rootValue = rootIndex !== -1 ? argv[rootIndex + 1] : undefined;
+  const root = resolve(rootValue ?? process.cwd());
 
   log.step(only ? `运行护栏（${only.join(', ')}）` : '运行全部护栏');
 
