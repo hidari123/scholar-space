@@ -1,59 +1,35 @@
-# ── Node ──────────────────────────────────────────────
-node_modules/
-.pnpm-store/
-*.tsbuildinfo
-.next/
-dist/
-build/
-.turbo/
-
-# ── Python ────────────────────────────────────────────
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
+build/
+dist/
 .venv/
 venv/
-.mypy_cache/
+
+# 测试缓存
 .pytest_cache/
+.mypy_cache/
 .ruff_cache/
-.hypothesis/
-htmlcov/
 .coverage
-coverage.xml
+htmlcov/
 
-# ── 环境与密钥 ────────────────────────────────────────
-.env
-.env.local
-.env.*.local
-!.env.example
-*.secret
-secrets/
+# Node
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
 
-# ── 本地数据 ──────────────────────────────────────────
-data/
-*.db
-*.sqlite
-*.sqlite3
-minio-data/
-postgres-data/
-redis-data/
+# 编辑器
+.vscode/
+.idea/
+*.swp
 
-# ── 构建产物 ──────────────────────────────────────────
+# ⚠️ **本地脚本** —— 一次性修复脚本不该进仓库
+.fix_*.py
+
+# ⚠️ **输出目录** —— 渲染产物不进仓库
+out/
+output/
 *.pptx
 *.pdf
-*.docx
-*.xlsx
-output/
-exports/
-dist-docs/
-
-# ── 编辑器与系统 ──────────────────────────────────────
-.vscode/*
-!.vscode/settings.json
-.idea/
-.DS_Store
-Thumbs.db
-
-# ── 日志 ──────────────────────────────────────────────
-logs/
-*.log
+!docs/**/*.pdf
