@@ -30,13 +30,8 @@ from scholar_auth.application.use_cases import (
     revoke_role,
     suspend_user,
 )
+from scholar_auth.composition import build_auth_context
 from scholar_auth.domain.models import Principal, RoleName, UserStatus
-from scholar_auth.infrastructure.memory import (
-    AuthRepositories,
-    InMemoryAccountRepository,
-    InMemoryAuditRepository,
-    InMemoryGrantRepository,
-)
 from scholar_auth.interfaces.dependencies import require_principal, require_roles
 from scholar_auth.interfaces.schemas import (
     AuditRecordResponse,
@@ -54,9 +49,18 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 # ══════════════════════════════════════════════════════════
 # 依赖注入
 #
-# ⚠️ 默认是内存实现 —— 生产环境覆盖这些依赖换成 PostgreSQL。
-#    这就是「端口在应用层，实现在基础设施层」的价值：
-#    路由代码一行都不用改。
+# ⚠️ **接口层不许 import 基础设施层** ——
+#    路由只认「一个能拿到 AuthContext 的依赖」，
+#    具体用内存实现还是 PostgreSQL，由组装根决定。
+#
+# ⚠️ **组装根在 `scholar_auth.composition`** ——
+#    它不属于任何一层，是把所有层拼起来的地方。
+#
+# ⚠️ **⚠️ 曾经的写法（已改）** ——
+#    路由曾直接 import `scholar_auth.infrastructure.memory`，
+#    当时的理由是「检查过没有循环依赖，所以安全」。
+#    ⚠️ **没有循环依赖 ≠ 架构正确** ——
+#    接口层依赖基础设施就意味着换实现要改路由。
 #
 # ⚠️ 用 functools.cache 做单例 —— 比 global 干净，
 #    不会有并发初始化的竞态。测试通过 dependency_overrides 覆盖。
@@ -66,22 +70,9 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 def get_auth_context() -> AuthContext:
     """用例上下文依赖。
 
-    ⚠️ 生产环境要注入真实的 PostgreSQL 仓储。
+    ⚠️ **只转发给组装根** —— 路由层不关心实现细节。
     """
-    # ⚠️ 这里 import 基础设施层 —— 检查过没有循环依赖：
-    #    interfaces → infrastructure → (domain + application) → domain
-    #    没有回到 interfaces，所以安全。
-    repositories = AuthRepositories(
-        accounts=InMemoryAccountRepository(),
-        grants=InMemoryGrantRepository(),
-        audit=InMemoryAuditRepository(),
-    )
-
-    return AuthContext(
-        grants=repositories.grants,
-        accounts=repositories.accounts,
-        audit=repositories.audit,
-    )
+    return build_auth_context()
 
 
 #: 管理员端点的上下文依赖。

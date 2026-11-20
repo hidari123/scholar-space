@@ -15,6 +15,7 @@ import { dirname, extname, join, relative, resolve } from 'node:path';
 import { g3, g4 } from './guards_g3_g4';
 import { g5 } from './guards_g5';
 import { g6 } from './guards_g6';
+import { g28 } from './guards_py_layers';
 
 /** 严重级别。 */
 export type Severity = 'error' | 'warn';
@@ -970,6 +971,7 @@ export const GUARDS: Guard[] = [
   g25,
   g26,
   g27,
+  g28,
 ];
 
 /**
