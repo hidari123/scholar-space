@@ -14,6 +14,7 @@ import { dirname, extname, join, relative, resolve } from 'node:path';
 
 import { g3, g4 } from './guards_g3_g4';
 import { g5 } from './guards_g5';
+import { g6 } from './guards_g6';
 
 /** 严重级别。 */
 export type Severity = 'error' | 'warn';
@@ -860,7 +861,23 @@ const g27: Guard = {
 };
 
 /** 全部护栏。 */
-export const GUARDS: Guard[] = [g3, g4, g5, g7, g11, g13, g16, g17, g21, g23, g24, g25, g26, g27];
+export const GUARDS: Guard[] = [
+  g3,
+  g4,
+  g5,
+  g6,
+  g7,
+  g11,
+  g13,
+  g16,
+  g17,
+  g21,
+  g23,
+  g24,
+  g25,
+  g26,
+  g27,
+];
 
 /**
  * 执行全部护栏。

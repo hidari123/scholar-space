@@ -1,0 +1,86 @@
+# 版本兼容矩阵 —— G6 护栏的数据源
+#
+# ⚠️ **消费方声明「我能接受哪些版本的提供方」** ——
+#    CI 校验：被依赖方的当前版本必须落在消费方声明的区间内，
+#    否则阻断发布。
+#
+# ⚠️ **为什么要有这个** ——
+#    契约改了但消费方没适配，是最常见的线上事故。
+#    光靠「契约一致」护栏（G5）发现不了 ——
+#    它只看「有没有」，不看「兼不兼容」。
+
+matrix:
+  # ── 主站前端 → 各独立服务 ──────────────────────────
+  - consumer: web
+    provider: slides
+    contract: slides/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-slides
+
+  - consumer: web
+    provider: paper
+    contract: paper/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-paper
+
+  - consumer: web
+    provider: orchestra
+    contract: orchestra/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-orchestra
+
+  - consumer: web
+    provider: community
+    contract: community/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-community
+
+  - consumer: web
+    provider: pdf-viewer
+    contract: pdf-viewer/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholar-pdf-viewer
+
+  # ── 网关 → 各独立服务 ──────────────────────────────
+  - consumer: gateway
+    provider: slides
+    contract: slides/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-slides
+
+  - consumer: gateway
+    provider: paper
+    contract: paper/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-paper
+
+  - consumer: gateway
+    provider: orchestra
+    contract: orchestra/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-orchestra
+
+  # ── 编排引擎 → 学术节点 ────────────────────────────
+  # ⚠️ **orchestra 通过 Port 接口调用** ——
+  #    不直接 import，所以版本约束更松。
+  - consumer: orchestra
+    provider: paper
+    contract: paper/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-paper
+
+  - consumer: orchestra
+    provider: slides
+    contract: slides/v1
+    min_provider_version: 0.1.0
+    max_provider_version: 0.x
+    repository: scholarspace-slides
