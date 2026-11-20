@@ -1,0 +1,359 @@
+# scholarspace 论文服务契约
+#
+# ⚠️ 契约是唯一真相源（ADR-0011 原则 2：契约先行）。
+# 生成来源：scholarspace-paper/libs/paper-http
+
+openapi: 3.1.0
+info:
+  title: scholarspace Paper API
+  version: 0.1.0
+  description: |
+    论文检索与文献库的 HTTP 接口。
+
+    ⚠️ **检索是 POST** —— 条件太复杂（作者 + 期刊 + 关键词 +
+    年份区间 + 开放获取 + 分页），GET 的 query string 装不下。
+
+paths:
+  /api/v1/papers/search:
+    post:
+      operationId: searchPapers
+      summary: 检索论文
+      tags: [papers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: 论文列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaperResponse'
+        '422':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/papers/import:
+    post:
+      operationId: importPapers
+      summary: 从数据源导入
+      tags: [imports]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+      responses:
+        '200':
+          description: 导入报告
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportReportResponse'
+        '422':
+          $ref: '#/components/responses/BadRequest'
+        '502':
+          description: 外部数据源失败
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/papers/{paper_id}:
+    parameters:
+      - $ref: '#/components/parameters/PaperId'
+    get:
+      operationId: getPaper
+      summary: 取论文
+      tags: [papers]
+      responses:
+        '200':
+          description: 论文详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deletePaper
+      summary: 删除论文（幂等）
+      tags: [papers]
+      responses:
+        '204':
+          description: 已删除
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/papers/{paper_id}/full-text:
+    parameters:
+      - $ref: '#/components/parameters/PaperId'
+    get:
+      operationId: getPaperFullText
+      summary: 取全文
+      tags: [papers]
+      description: |
+        ⚠️ **单独一个端点** —— 全文很大，
+        不该塞进列表响应里。
+      responses:
+        '200':
+          description: 全文内容
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/papers/{paper_id}/duplicate/{candidate_id}:
+    parameters:
+      - $ref: '#/components/parameters/PaperId'
+      - name: candidate_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: checkPaperDuplicate
+      summary: 检查两篇是不是重复
+      tags: [papers]
+      responses:
+        '200':
+          description: 判定结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DedupDecisionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    SearchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        query:
+          type: string
+          maxLength: 1000
+        author:
+          type: string
+          maxLength: 200
+        venue:
+          type: string
+          maxLength: 200
+        keywords:
+          type: array
+          items:
+            type: string
+        date_from:
+          type: [integer, 'null']
+          minimum: 1000
+          maximum: 2100
+        date_to:
+          type: [integer, 'null']
+          minimum: 1000
+          maximum: 2100
+        open_access_only:
+          type: boolean
+          default: false
+        limit:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          default: 0
+          minimum: 0
+        include_external:
+          type: boolean
+          default: false
+          description: |
+            ⚠️ **外部源的结果不入库** —— 只是临时展示，
+            用户点了「收藏」才入库。
+
+    AuthorResponse:
+      type: object
+      required: [author_id, name, orcid, institutions]
+      properties:
+        author_id:
+          type: string
+        name:
+          type: string
+        orcid:
+          type: string
+        institutions:
+          type: array
+          items:
+            type: string
+
+    PaperResponse:
+      type: object
+      required:
+        [
+          paper_id,
+          title,
+          abstract,
+          authors,
+          year,
+          publication_type,
+          open_access,
+          venue,
+          volume,
+          issue,
+          pages,
+          publisher,
+          citation_count,
+          cited_by_count,
+          keywords,
+          source,
+          source_id,
+          pdf_url,
+          status,
+          has_full_text,
+        ]
+      properties:
+        paper_id:
+          type: string
+        title:
+          type: string
+        abstract:
+          type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorResponse'
+        year:
+          type: [integer, 'null']
+        publication_type:
+          type: string
+          enum:
+            [journal_article, conference_paper, preprint, thesis, book, report, unknown]
+        open_access:
+          type: string
+          enum: [open, green, hybrid, closed, embargo, unknown]
+        venue:
+          type: string
+        volume:
+          type: string
+        issue:
+          type: string
+        pages:
+          type: string
+        doi:
+          type: [string, 'null']
+        arxiv_id:
+          type: [string, 'null']
+        publisher:
+          type: string
+        citation_count:
+          type: integer
+        cited_by_count:
+          type: integer
+        keywords:
+          type: array
+          items:
+            type: string
+        source:
+          type: string
+          enum:
+            [arxiv, pubmed, crossref, semantic_scholar, openalex, local_upload, manual]
+        source_id:
+          type: string
+        pdf_url:
+          type: string
+        status:
+          type: string
+          enum: [imported, parsing, parsed, indexed, failed]
+        has_full_text:
+          type: boolean
+          description: ⚠️ 全文不在响应里 —— 只给一个标志
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+
+    ImportRequest:
+      type: object
+      additionalProperties: false
+      required: [source]
+      properties:
+        source:
+          type: string
+          description: 数据源名称（arxiv / crossref / …）
+        query:
+          type: string
+          maxLength: 1000
+        limit:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+
+    ImportReportResponse:
+      type: object
+      required: [fetched, inserted, updated, skipped, details]
+      properties:
+        fetched:
+          type: integer
+        inserted:
+          type: integer
+        updated:
+          type: integer
+        skipped:
+          type: integer
+        details:
+          type: array
+          items:
+            type: string
+
+    DedupDecisionResponse:
+      type: object
+      required: [is_same, reason, confidence]
+      properties:
+        is_same:
+          type: boolean
+        reason:
+          type: string
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+
+  parameters:
+    PaperId:
+      name: paper_id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: 参数错误
+      content:
+        application/json:
+          schema:
+            $ref: './common.yaml#/components/schemas/ErrorResponse'
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: './common.yaml#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: 服务未就绪
+      content:
+        application/json:
+          schema:
+            $ref: './common.yaml#/components/schemas/ErrorResponse'

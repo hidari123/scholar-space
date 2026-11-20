@@ -12,6 +12,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 
+import { g5 } from './guards_g5';
+
 /** 严重级别。 */
 export type Severity = 'error' | 'warn';
 
@@ -857,7 +859,7 @@ const g27: Guard = {
 };
 
 /** 全部护栏。 */
-export const GUARDS: Guard[] = [g7, g11, g13, g16, g17, g21, g23, g24, g25, g26, g27];
+export const GUARDS: Guard[] = [g5, g7, g11, g13, g16, g17, g21, g23, g24, g25, g26, g27];
 
 /**
  * 执行全部护栏。

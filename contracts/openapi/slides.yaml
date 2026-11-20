@@ -1,0 +1,367 @@
+# scholarspace 演示文稿服务契约
+#
+# ⚠️ 契约是唯一真相源（ADR-0011 原则 2：契约先行）。
+# ⚠️ 禁止手写 DTO —— 改契约 → 重新生成 → 类型错误在编译期暴露。
+#
+# 生成来源：scholarspace-slides/libs/slides-http
+
+openapi: 3.1.0
+info:
+  title: scholarspace Slides API
+  version: 0.1.0
+  description: |
+    演示文稿引擎的 HTTP 接口。
+
+    流程：创建项目 → 生成大纲 → 渲染 → 导出。
+
+paths:
+  /api/v1/slides/projects:
+    post:
+      operationId: createSlideProject
+      summary: 创建项目
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '422':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      operationId: listSlideProjects
+      summary: 列出项目
+      tags: [projects]
+      responses:
+        '200':
+          description: 项目列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectResponse'
+
+  /api/v1/slides/projects/{project_id}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: getSlideProject
+      summary: 取项目
+      tags: [projects]
+      responses:
+        '200':
+          description: 项目详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteSlideProject
+      summary: 删除项目（幂等）
+      tags: [projects]
+      responses:
+        '204':
+          description: 已删除
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/slides/projects/{project_id}/plan:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: planSlideProject
+      summary: 生成大纲
+      tags: [projects]
+      responses:
+        '200':
+          description: 大纲
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/BadRequest'
+    get:
+      operationId: getSlidePlan
+      summary: 取大纲
+      tags: [projects]
+      responses:
+        '200':
+          description: 大纲
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/slides/projects/{project_id}/render:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: renderSlideProject
+      summary: 渲染（PPTX + PNG 预览）
+      tags: [renders]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenderRequest'
+      responses:
+        '200':
+          description: 渲染结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/slides/projects/{project_id}/export:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: exportSlideProject
+      summary: 导出
+      tags: [exports]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '200':
+          description: 导出结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  schemas:
+    CreateProjectRequest:
+      type: object
+      required: [title]
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        source_type:
+          type: string
+          default: topic
+          enum: [paper, pdf, markdown, topic]
+        source_ref:
+          type: string
+          maxLength: 2000
+        lang:
+          type: string
+          default: zh
+          maxLength: 20
+        theme_id:
+          type: string
+          default: academic-blue
+          maxLength: 50
+        canvas_ratio:
+          type: string
+          default: '16:9'
+          enum: ['16:9', '4:3', 'A4']
+
+    ProjectResponse:
+      type: object
+      required: [project_id, owner_id, title, source_type, lang, theme_id, canvas_ratio, status, page_count]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: integer
+        title:
+          type: string
+        source_type:
+          type: string
+        source_ref:
+          type: string
+        lang:
+          type: string
+        theme_id:
+          type: string
+        canvas_ratio:
+          type: string
+        status:
+          type: string
+          enum: [draft, planning, planned, rendering, rendered, failed]
+        page_count:
+          type: integer
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+
+    PageResponse:
+      type: object
+      required: [page_id, order_no, layout, title, bullets, image_refs, notes, overflow, layout_warnings]
+      properties:
+        page_id:
+          type: string
+          format: uuid
+        order_no:
+          type: integer
+        layout:
+          type: string
+          enum:
+            - title
+            - bullets
+            - section
+            - two_column
+            - image_focus
+            - image_left
+            - chart
+            - table
+            - quote
+        title:
+          type: string
+        bullets:
+          type: array
+          items:
+            type: string
+        image_refs:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        overflow:
+          type: string
+          enum: [shrink, truncate, split, regenerate]
+        layout_warnings:
+          type: array
+          items:
+            type: string
+          description: 排版降级的警告 —— 用户要知道内容被改过
+
+    PlanResponse:
+      type: object
+      required: [theme_id, version, page_count, pages]
+      properties:
+        theme_id:
+          type: string
+        version:
+          type: integer
+        page_count:
+          type: integer
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageResponse'
+        model:
+          type: [string, 'null']
+
+    RenderRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        page_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        zoom:
+          type: number
+          default: 2.0
+          minimum: 0.5
+          maximum: 8.0
+
+    RenderResponse:
+      type: object
+      required: [page_count, pptx_path, preview_dir, preview_paths]
+      properties:
+        page_count:
+          type: integer
+        pptx_path:
+          type: string
+        preview_dir:
+          type: string
+        preview_paths:
+          type: array
+          items:
+            type: string
+
+    ExportRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        format:
+          type: string
+          default: pptx
+          enum: [pptx, pdf, png_zip, md]
+
+    ExportResponse:
+      type: object
+      required: [format, path, size_bytes, page_count]
+      properties:
+        format:
+          type: string
+        path:
+          type: string
+        size_bytes:
+          type: integer
+        page_count:
+          type: integer
+
+  parameters:
+    ProjectId:
+      name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: 参数错误
+      content:
+        application/json:
+          schema:
+            $ref: './common.yaml#/components/schemas/ErrorResponse'
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: './common.yaml#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: 服务未就绪
+      content:
+        application/json:
+          schema:
+            $ref: './common.yaml#/components/schemas/ErrorResponse'
