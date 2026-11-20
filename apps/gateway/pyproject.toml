@@ -1,0 +1,41 @@
+[project]
+name = "scholarspace-gateway"
+version = "0.1.0"
+description = "scholarspace API 网关 —— 聚合各独立服务 + 路由映射 + 特性开关"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Proprietary" }
+
+dependencies = [
+    "fastapi>=0.115",
+    "httpx>=0.28",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.9",
+    "mypy>=1.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gateway"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/gateway", "README.md", "config"]
+
+[tool.ruff]
+extend = "../../packages/conventions/python/ruff.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+addopts = "-ra --strict-markers --tb=short"

@@ -1,0 +1,40 @@
+# 网关路由映射 —— 旧路径 → 新路径
+#
+# ⚠️ **切流靠「路径映射 + 特性开关」** —— 前端零改动，后端逐步切。
+# ⚠️ **格式**：旧路径 | 新路径 | 目标服务 | 特性开关
+# ⚠️ **开关留空 = 无条件切换**（已经切完了）
+#
+# ⚠️ **顺序很重要** —— 第一个命中的赢。
+#    具体路径要排在通配符前面！
+
+default_target: legacy
+
+routes:
+  # ── orchestra ──────────────────────────────────────
+  /api/v2/agent/flows | /api/v1/orchestra/flows | orchestra | orchestra.flows
+  /api/v2/agent/build/*/flow | /api/v1/orchestra/runs | orchestra | orchestra.runs
+  /api/v2/agent/build/*/events | /api/v1/orchestra/runs/*/events | orchestra | orchestra.runs
+  /api/v2/agent/monitor/messages | /api/v1/orchestra/sessions/*/messages | orchestra | orchestra.sessions
+  /api/v2/agent/store/agent | /api/v1/orchestra/nodes | orchestra | orchestra.nodes
+
+  # ── community ──────────────────────────────────────
+  /api/v2/social/statuses | /api/v1/community/statuses | community | community.statuses
+  /api/v2/social/accounts | /api/v1/community/accounts | community | community.accounts
+  /api/v2/social/timelines | /api/v1/community/timelines | community | community.timelines
+  /api/v2/social/tags | /api/v1/community/tags | community | community.tags
+  /api/v2/social/notifications | /api/v1/community/notifications | community | community.notifications
+
+  # ── paper ──────────────────────────────────────────
+  /api/v1/papers/search | /api/v1/papers/search | paper | paper.search
+  /api/v2/papersketch | /api/v1/papers/sketch | paper | paper.sketch
+  /api/v2/paperinsight/* | /api/v1/papers/insight/* | paper | paper.insight
+
+  # ── billing ────────────────────────────────────────
+  /api/v2/payment/* | /api/v1/billing/* | billing | billing.all
+  /api/v2/alipay/* | /api/v1/billing/alipay/* | billing | billing.all
+
+  # ── auth ───────────────────────────────────────────
+  /api/v2/login/* | /api/v1/auth/* | auth | auth.all
+
+  # ── slides ─────────────────────────────────────────
+  /api/v1/slides/* | /api/v1/slides/* | slides | slides.all
