@@ -13,9 +13,9 @@
 > | 8 套内置学术主题 | ✅ | 同上 `domain/builtin_themes.py` |
 > | 文本量测 + 中英混排断行 | ✅ | 同上 `layout/measure.py` |
 > | **G2 闸门** | ✅ **通过** | `docs/adr/0019-g2-gate-review.md` |
-> | PNG 预览 | ⬜ | M3.1 |
-> | 真实论文端到端验证 | ⬜ | M3.1 |
-> | Pillow 真实字体度量 | ⬜ | M3.1 |
+> | PNG 预览 | ✅ | `slides-render/render/png.py`（与 pptx 共用量测）|
+> | 真实论文端到端验证 | ✅ | `slides-render/tests/test_e2e.py`（28 测试）|
+> | Pillow 真实字体度量 | ✅ | `slides-render/layout/fonts.py`（误差 33% → 0）|
 > | 图片渲染 | ⬜ | M3.2 |
 > | 溢出降级（TRUNCATE/SPLIT/REGENERATE）| ⬜ | M3.2 |
 > | PDF 导出 | ⬜ | M3.3 |
