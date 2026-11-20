@@ -69,7 +69,19 @@ let serviceImpls: Record<string, string> = {
   ...EXTERNAL_IMPLS,
 };
 
-/** 最小 YAML 解析 —— 只提取顶层 `paths:` 下的 path 键。 */
+/**
+ * 最小 YAML 解析 —— 只提取顶层 `paths:` 下的 path 键。
+ *
+ * ⚠️ **为什么要自己解析而不用 YAML 库** ——
+ * 护栏要能在任何环境跑（连 node_modules 都不一定有），
+ * 加个 YAML 依赖就多一层失败的可能。
+ *
+ * ⚠️ **只认「缩进 2 格 + 以 `/` 开头 + 冒号结尾」的行** ——
+ * 这样不会把 `paths:` 下面嵌套的操作（如 `get:`）误当成 path。
+ *
+ * ⚠️ **遇到下一个顶层键就结束** ——
+ * `paths:` 之后是 `components:`，那里面的 schema 键不是 path。
+ */
 function extractPaths(content: string): Set<string> {
   const paths = new Set<string>();
   const lines = content.split('\n');
@@ -86,12 +98,13 @@ function extractPaths(content: string): Set<string> {
     if (!inPaths) continue;
 
     // ⚠️ 遇到下一个顶层键就结束
+    //    （`components:` / `info:` 等）
     if (/^[a-zA-Z]/.test(line)) {
       inPaths = false;
       continue;
     }
 
-    // ⚠️ path 键在 `paths:` 下缩进 2 格，以 `/` 开头
+    // ⚠️ path 键在 `paths:` 下缩进 2 格，以 `/` 开头，冒号结尾
     const match = /^ {2}(\/[^:]*):\s*$/.exec(line);
     if (match?.[1]) {
       paths.add(match[1]);

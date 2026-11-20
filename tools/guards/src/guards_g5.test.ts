@@ -155,4 +155,57 @@ describe('G5 契约一致性', () => {
 
     expect(g5.run(root)).toEqual([]);
   });
+
+  it('⚠️ components 里的 schema 键不被当成 path', () => {
+    // ⚠️ **这是实测发现的坑** ——
+    // 往契约的 `components:` 后面加一个 `/xxx:`，
+    // 解析器不应该把它当成 path
+    //（否则「契约里有、实现里没有」这个方向的检查会漏）。
+    const content = [
+      'openapi: 3.1.0',
+      'paths:',
+      '  /api/v1/test/real:',
+      '    get:',
+      '      responses:',
+      "        '200':",
+      '          description: ok',
+      'components:',
+      '  schemas:',
+      '    /api/v1/test/not-a-path:',
+      '      type: object',
+      '',
+    ].join('\n');
+
+    writeFileSync(join(root, 'contracts', 'openapi', 'auth.yaml'), content);
+    writeImpl('auth', ['/api/v1/test/real']);
+
+    // ⚠️ **不该报违规** —— `/not-a-path` 不是契约里的端点
+    expect(g5.run(root)).toEqual([]);
+  });
+
+  it('⚠️ paths 里多一个端点 → 违规（真实场景）', () => {
+    const content = [
+      'openapi: 3.1.0',
+      'paths:',
+      '  /api/v1/test/real:',
+      '    get:',
+      '      responses:',
+      "        '200':",
+      '          description: ok',
+      '  /api/v1/test/ghost:',
+      '    get:',
+      '      responses:',
+      "        '200':",
+      '          description: ok',
+      '',
+    ].join('\n');
+
+    writeFileSync(join(root, 'contracts', 'openapi', 'auth.yaml'), content);
+    writeImpl('auth', ['/api/v1/test/real']);
+
+    const violations = g5.run(root);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain('/api/v1/test/ghost');
+  });
 });
