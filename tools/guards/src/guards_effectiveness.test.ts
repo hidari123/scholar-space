@@ -191,6 +191,64 @@ describe('护栏有效性', () => {
     expect(violations).toEqual([]);
   });
 
+  it('⚠️ G7 现在也扫 apps/（M6 之后业务前端在那儿）', () => {
+    const g7 = guardById('G7');
+    const violations = detect(g7, () => {
+      write('apps/web/src/probe.ts', "import { Button } from 'antd';\n");
+    });
+
+    expect(violations.length).toBeGreaterThan(0);
+  });
+
+  it('⚠️ G7 不误报注释里的 import 例子', () => {
+    const g7 = guardById('G7');
+    const violations = detect(g7, () => {
+      // ⚠️ **文档里写例子很常见** ——
+      // 那不是真的 import，不该被拦。
+      write(
+        'apps/web/src/probe.ts',
+        "// 用法：import { Button } from 'antd'\nexport const x = 1;\n",
+      );
+    });
+
+    expect(violations).toEqual([]);
+  });
+
+  it('⚠️ G7 不误报测试文件里的假违规', () => {
+    const g7 = guardById('G7');
+    const violations = detect(g7, () => {
+      // ⚠️ **测试会故意写违规来验证护栏** ——
+      // 扫到它们就是「自己抓自己」。
+      write('apps/web/src/probe.test.ts', "import { Button } from 'antd';\n");
+    });
+
+    expect(violations).toEqual([]);
+  });
+
+  it('⚠️ G16 现在也扫 apps/（密钥不能漏）', () => {
+    const g16 = guardById('G16');
+    const violations = detect(g16, () => {
+      write(
+        'apps/web/src/probe.ts',
+        "export const key = 'sk-abcdefghijklmnopqrstuvwxyz0123456789';\n",
+      );
+    });
+
+    expect(violations.length).toBeGreaterThan(0);
+  });
+
+  it('⚠️ G16 不误报测试文件里的假密钥', () => {
+    const g16 = guardById('G16');
+    const violations = detect(g16, () => {
+      write(
+        'apps/web/src/probe.test.ts',
+        "export const key = 'sk-abcdefghijklmnopqrstuvwxyz0123456789';\n",
+      );
+    });
+
+    expect(violations).toEqual([]);
+  });
+
   it('G11 挡住组件级硬编码颜色', () => {
     const g11 = guardById('G11');
     const violations = detect(g11, () => {

@@ -120,6 +120,22 @@ function readText(path: string): string {
   }
 }
 
+/**
+ * 去掉注释。
+ *
+ * ⚠️ **为什么需要** ——
+ * 文档里写「`import { Button } from 'antd'`」这种例子，
+ * 那是**注释**，不是真的 import。
+ * 不去掉的话，护栏会把自己文档里的例子当违规报出来。
+ *
+ * ⚠️ **粗略但够用** ——
+ * 不处理字符串里的 `//`（比如 URL `https://...`），
+ * 但那种情况正则本身也匹配不上 `from 'antd'`。
+ */
+function stripComments(content: string): string {
+  return content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+}
+
 // ══════════════════════════════════════════════════════════
 // G7 —— 前端禁止直接 import antd
 // ══════════════════════════════════════════════════════════
@@ -133,7 +149,7 @@ const g7: Guard = {
     const violations: string[] = [];
     const importPattern = /from\s+['"]antd(?:['"]|\/)/;
 
-    for (const file of walkFiles(join(root, 'packages'), ['.ts', '.tsx'])) {
+    for (const file of sourceFiles(root, ['.ts', '.tsx'])) {
       // ui 包本身是唯一允许的入口
       if (
         relative(root, file).includes('packages\\ui\\') ||
@@ -142,7 +158,11 @@ const g7: Guard = {
         continue;
       }
 
-      const content = readText(file);
+      // ⚠️ **注释行跳过** ——
+      //    文档里写「`import { Button } from 'antd'`」这种例子
+      //    不是真的 import。
+      const content = stripComments(readText(file));
+
       if (importPattern.test(content)) {
         violations.push(`${relative(root, file)}: 直接 import 了 antd`);
       }
@@ -199,10 +219,8 @@ const g13: Guard = {
     const violations: string[] = [];
     const keyPattern = /^([a-z][a-zA-Z0-9]*)\.[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)*$/;
 
-    for (const file of walkFiles(join(root, 'packages'), ['.ts', '.tsx'])) {
+    for (const file of sourceFiles(root, ['.ts', '.tsx'])) {
       if (!file.includes('i18n')) continue;
-      // ⚠️ 测试文件里的 key 是故意造的假数据，不该被拦
-      if (file.includes('.test.') || file.includes('.spec.')) continue;
 
       const content = readText(file);
       violations.push(...checkKeysInFile(root, file, content, keyPattern));
@@ -269,35 +287,65 @@ const g16: Guard = {
   severity: 'error',
   scope: 'packages',
   run(root) {
-    const violations: string[] = [];
-    // 常见密钥模式
-    const patterns: RegExp[] = [
-      /sk-[A-Za-z0-9]{20,}/, // OpenAI
-      /ghp_[A-Za-z0-9]{30,}/, // GitHub token
-      /AKIA[0-9A-Z]{16}/, // AWS access key
-      /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-    ];
-
-    for (const file of walkFiles(join(root, 'packages'), [
-      '.ts',
-      '.tsx',
-      '.py',
-      '.toml',
-      '.json',
-    ])) {
-      if (file.includes('.env')) continue;
-
-      const content = readText(file);
-      for (const pattern of patterns) {
-        if (pattern.test(content)) {
-          violations.push(`${relative(root, file)}: 疑似硬编码密钥（${pattern.source}）`);
-        }
-      }
-    }
-
-    return violations;
+    return scanForSecrets(root);
   },
 };
+
+/**
+ * 常见密钥模式。
+ */
+const SECRET_PATTERNS: RegExp[] = [
+  /sk-[A-Za-z0-9]{20,}/, // OpenAI
+  /ghp_[A-Za-z0-9]{30,}/, // GitHub token
+  /AKIA[0-9A-Z]{16}/, // AWS access key
+  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+];
+
+/**
+ * 扫硬编码密钥。
+ *
+ * ⚠️ **拆出来是为了控制复杂度** ——
+ * biome 的 `noExcessiveCognitiveComplexity` 限制 15。
+ */
+function scanForSecrets(root: string): string[] {
+  const violations: string[] = [];
+
+  for (const file of sourceFiles(root, ['.ts', '.tsx', '.py', '.toml', '.json'])) {
+    const content = readText(file);
+
+    for (const pattern of SECRET_PATTERNS) {
+      if (pattern.test(content)) {
+        violations.push(`${relative(root, file)}: 疑似硬编码密钥（${pattern.source}）`);
+      }
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * 收集要扫的源码文件。
+ *
+ * ⚠️ **只收「业务源码」** ——
+ *   · `.env` 文件排除（那是配置，不是源码）
+ *   · 测试文件排除（里面是故意造的假违规）
+ */
+function sourceFiles(root: string, extensions: string[]): string[] {
+  const results: string[] = [];
+
+  for (const dir of SOURCE_SCAN_DIRS) {
+    const files = walkFiles(join(root, dir), extensions);
+
+    for (const file of files) {
+      if (file.includes('.env')) continue;
+      if (isTestFile(file)) continue;
+
+      results.push(file);
+    }
+  }
+
+  return results;
+}
 
 // ══════════════════════════════════════════════════════════
 // G17 —— License 白名单
@@ -312,7 +360,7 @@ const g17: Guard = {
     const violations: string[] = [];
     const forbidden = ['AGPL', 'GPL-3.0', 'SSPL', 'AGPL-3.0'];
 
-    for (const file of walkFiles(join(root, 'packages'), ['.json'])) {
+    for (const file of sourceFiles(root, ['.json'])) {
       if (file.includes('package-lock')) continue;
 
       const content = readText(file);
@@ -421,14 +469,19 @@ const g24: Guard = {
     //    （正则里写 \u0000 会被 biome 的 noControlCharactersInRegex 拦）
     const pattern = /^\s*(?:async\s+)?def\s+(test_[^\s(]*)\s*\(/gm;
 
-    for (const file of walkFiles(join(root, 'packages'), ['.py'])) {
-      const content = readText(file);
-      for (const match of content.matchAll(pattern)) {
-        const name = match[1];
-        if (!name) continue;
-        if (!hasNonAscii(name)) continue;
+    // ⚠️ **G24 必须扫测试文件** ——
+    //    它检查的就是「测试函数名」，测试文件正是目标。
+    //    所以这里不能用 `sourceFiles()`（那个会排除测试文件）。
+    for (const dir of SOURCE_SCAN_DIRS) {
+      for (const file of walkFiles(join(root, dir), ['.py'])) {
+        const content = readText(file);
+        for (const match of content.matchAll(pattern)) {
+          const name = match[1];
+          if (!name) continue;
+          if (!hasNonAscii(name)) continue;
 
-        violations.push(`${relative(root, file)}: 测试函数名 "${name}" 含非 ASCII 字符`);
+          violations.push(`${relative(root, file)}: 测试函数名 "${name}" 含非 ASCII 字符`);
+        }
       }
     }
 
@@ -510,6 +563,46 @@ const BASE_SYNC_DIRS = ['packages', 'tools', 'cli', 'examples', 'apps'];
  *      绿勾给人虚假的安全感。
  */
 const GUARD_SCAN_DIRS = [...BASE_SYNC_DIRS, 'libs'];
+
+/**
+ * **源码**扫描目录 —— G7 / G13 / G16 / G17 / G24 用。
+ *
+ * ⚠️ **为什么跟 `GUARD_SCAN_DIRS` 分开** ——
+ *    `GUARD_SCAN_DIRS` 是「所有需要扫的目录」，
+ *    这个是「有源码的目录」。
+ *
+ * ⚠️ **⚠️ 关键** ——
+ *    M6 之后**业务前端搬到了 `apps/web/`**，
+ *    但这五条护栏还只扫 `packages/` ——
+ *    **主站可以绕过「组件只能从 @scholarspace/ui 拿」这条铁律**。
+ *
+ *    ⚠️ **护栏扫不到的地方 = 没有护栏** ——
+ *    绿勾会给人虚假的安全感。
+ */
+const SOURCE_SCAN_DIRS = ['packages', 'apps', 'tools', 'cli', 'examples', 'libs'];
+
+/**
+ * 是不是测试文件。
+ *
+ * ⚠️ **测试文件里的「假违规」不该被拦** ——
+ *    测试会故意写 `import { Button } from 'antd'` 来验证护栏，
+ *    扫到它们就是「自己抓自己」。
+ */
+function isTestFile(file: string): boolean {
+  const normalized = file.replace(/\\/g, '/');
+  const name = normalized.split('/').pop() ?? normalized;
+
+  // ⚠️ **不排除 `/tests/`** ——
+  //    Python 的测试通常就放在 `tests/` 目录里
+  //    （不是 `xxx.test.py`）。
+  //    排除它的话，G24 就扫不到任何 Python 测试了。
+  return (
+    name.includes('.test.') ||
+    name.includes('.spec.') ||
+    normalized.includes('/__tests__/') ||
+    normalized.includes('/fixtures/')
+  );
+}
 
 /**
  * 归一化内容以便比较。
