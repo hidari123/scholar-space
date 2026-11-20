@@ -1,7 +1,6 @@
-{
-	"root": false,
-	"extends": ["../../packages/conventions/typescript/biome.json"],
-	"files": {
-		"includes": ["src/**", "tests/**", "*.json", "*.ts"]
-	}
+﻿{
+  "extends": ["../../packages/conventions/typescript/biome.json"],
+  "files": {
+    "includes": ["src/**", "*.json", "*.ts"]
+  }
 }

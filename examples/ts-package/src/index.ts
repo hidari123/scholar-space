@@ -5,16 +5,16 @@
  *    （G4-1 护栏）。
  */
 
-export type { ExampleProps } from "./components";
-export { ExampleCard } from "./components";
-export type { CreateExampleInput, ErrorCodeValue, Example } from "./core";
+export type { ExampleProps } from './components';
+export { ExampleCard } from './components';
+export type { CreateExampleInput, ErrorCodeValue, Example } from './core';
 export {
-	AppError,
-	createExample,
-	ErrorCode,
-	formatExampleName,
-	NotFoundError,
-	ValidationError,
-} from "./core";
-export type { UseExampleResult } from "./hooks";
-export { useExample } from "./hooks";
+  AppError,
+  createExample,
+  ErrorCode,
+  formatExampleName,
+  NotFoundError,
+  ValidationError,
+} from './core';
+export type { UseExampleResult } from './hooks';
+export { useExample } from './hooks';

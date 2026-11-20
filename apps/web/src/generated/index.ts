@@ -5,10 +5,10 @@
  */
 
 /** core 客户端。 */
-export * from "./core";
+export * from './core';
 /** orchestra 客户端。 */
-export * from "./orchestra";
+export * from './orchestra';
 /** paper 客户端。 */
-export * from "./paper";
+export * from './paper';
 /** slides 客户端。 */
-export * from "./slides";
+export * from './slides';

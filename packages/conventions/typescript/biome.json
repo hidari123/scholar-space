@@ -2,7 +2,7 @@
   "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
 
   "files": {
-    "includes": ["**", "!**/dist/**", "!**/node_modules/**", "!**/coverage/**", "!**/generated/**"]
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/coverage", "!**/generated"]
   },
 
   "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": true },

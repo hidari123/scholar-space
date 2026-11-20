@@ -252,7 +252,7 @@ function missingInImpl(
   for (const path of contractPaths) {
     if (!implRoutes.has(path)) {
       violations.push(
-        `${serviceName}: 契约里的 ${path} 在实现里找不到 —— ` + `要么实现漏了，要么契约写错了`,
+        `${serviceName}: 契约里的 ${path} 在实现里找不到 —— 要么实现漏了，要么契约写错了`,
       );
     }
   }

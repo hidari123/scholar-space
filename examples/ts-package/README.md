@@ -65,14 +65,14 @@ tsup.config.ts    构建（esm + dts）
 
 ```ts
 // src/core/create-example.ts —— 无 import React，无 DOM 访问
-import { ValidationError } from "./errors";
+import { ValidationError } from './errors';
 
 export function createExample(input: CreateExampleInput): Example {
-	const name = input.name.trim();
-	if (name.length === 0) {
-		throw new ValidationError("name cannot be empty", { field: "name" });
-	}
-	return { exampleId: `example-${Date.now()}`, name, createdAt: new Date() };
+  const name = input.name.trim();
+  if (name.length === 0) {
+    throw new ValidationError('name cannot be empty', { field: 'name' });
+  }
+  return { exampleId: `example-${Date.now()}`, name, createdAt: new Date() };
 }
 ```
 
@@ -83,27 +83,19 @@ export function createExample(input: CreateExampleInput): Example {
 ```tsx
 // src/components/Example.tsx
 export interface ExampleProps {
-	example: Example;
-	showCreatedAt?: boolean;
-	onSelect?: (example: Example) => void; // 不传 → 按钮不渲染
+  example: Example;
+  showCreatedAt?: boolean;
+  onSelect?: (example: Example) => void; // 不传 → 按钮不渲染
 }
 
-export function ExampleCard({
-	example,
-	showCreatedAt = false,
-	onSelect,
-}: ExampleProps) {
-	return (
-		<article>
-			<h3>{example.name}</h3>
-			{showCreatedAt ? (
-				<time>{example.createdAt.toLocaleDateString()}</time>
-			) : null}
-			{onSelect ? (
-				<button onClick={() => onSelect(example)}>Select</button>
-			) : null}
-		</article>
-	);
+export function ExampleCard({ example, showCreatedAt = false, onSelect }: ExampleProps) {
+  return (
+    <article>
+      <h3>{example.name}</h3>
+      {showCreatedAt ? <time>{example.createdAt.toLocaleDateString()}</time> : null}
+      {onSelect ? <button onClick={() => onSelect(example)}>Select</button> : null}
+    </article>
+  );
 }
 ```
 
@@ -114,11 +106,11 @@ export function ExampleCard({
 ```ts
 // src/core/errors.ts
 export const ErrorCode = {
-	OK: 0,
-	INVALID_ARGUMENT: 40001,
-	NOT_FOUND: 40401,
-	INSUFFICIENT_BALANCE: 60001,
-	// …与 packages/conventions/api/error-codes.json 一致
+  OK: 0,
+  INVALID_ARGUMENT: 40001,
+  NOT_FOUND: 40401,
+  INSUFFICIENT_BALANCE: 60001,
+  // …与 packages/conventions/api/error-codes.json 一致
 } as const;
 ```
 

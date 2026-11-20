@@ -5,7 +5,7 @@ scholarspace 主站前端。
 ## ⚠️ 组件只能从 `@scholarspace/ui` 拿
 
 ```tsx
-import { Button, Select } from "@scholarspace/ui";
+import { Button, Select } from '@scholarspace/ui';
 ```
 
 **不能** `import { Button } from 'antd'` —— 护栏 G7 会阻断。
@@ -28,11 +28,11 @@ const papers = await request<Paper[]>('/v1/papers/search', { method: 'POST', bod
 
 ```ts
 interface ApiResponse<T> {
-	code: number; // 业务错误码，0 = 成功
-	message: string; // 优先是 i18n key
-	data: T | null;
-	request_id: string;
-	timestamp: string;
+  code: number; // 业务错误码，0 = 成功
+  message: string; // 优先是 i18n key
+  data: T | null;
+  request_id: string;
+  timestamp: string;
 }
 ```
 

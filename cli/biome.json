@@ -2,12 +2,5 @@
   "extends": ["../packages/conventions/typescript/biome.json"],
   "files": {
     "includes": ["src/**", "*.json", "*.ts"]
-  },
-  "linter": {
-    "rules": {
-      "suspicious": {
-        "noConsole": "off"
-      }
-    }
   }
 }
