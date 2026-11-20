@@ -1,0 +1,45 @@
+[project]
+name = "scholarspace-federation"
+version = "0.1.0"
+description = "scholarspace 联邦服务 —— ActivityPub（独立于社区业务）"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Proprietary" }
+
+# ⚠️ 领域层零依赖 —— 只有标准库。
+dependencies = []
+
+[project.optional-dependencies]
+# ⚠️ cryptography 是**安全依赖** —— 验签必须有它。
+# 没装的话验签直接失败（不放行），不会降级。
+crypto = [
+    "cryptography>=43",
+]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "cryptography>=43",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scholar_federation"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/scholar_federation", "README.md"]
+
+[tool.ruff]
+extend = "./ruff.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+addopts = "-ra --strict-markers --tb=short"
