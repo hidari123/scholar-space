@@ -11,7 +11,7 @@
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { ContractBundle, toYaml } from './loader';
 import { findProjectRoot, openapiDir } from './paths';
@@ -93,9 +93,39 @@ export function runReleaseCheck(): number {
 }
 
 /** 生成产物目录。 */
-export function generatedDir(): string {
-  // ⚠️ **主站在 `apps/web`** —— 不是 `packages/web`。
+export function generatedDir(out?: string | undefined): string {
+  // ⚠️ **可以被 `--out` 覆盖** ——
+  //    各独立仓要生成自己的客户端：
+  //      `node tools/codegen/dist/cli.js generate --out <path>`
+  if (out) return resolve(out);
+
+  // ⚠️ **默认是主仓的集成壳** ——
+  //    主仓只有集成壳，只生成 core 客户端。
   return join(findProjectRoot(), 'apps', 'web', 'src', 'generated');
+}
+
+/**
+ * 读一个 `--xxx value` 形式的命令行参数。
+ *
+ * ⚠️ **也支持 `--xxx=value`** —— 两种写法都常见。
+ */
+function readFlag(name: string): string | undefined {
+  const args = process.argv.slice(2);
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === undefined) continue;
+
+    if (arg.startsWith(`${name}=`)) {
+      return arg.slice(name.length + 1);
+    }
+
+    if (arg === name) {
+      return args[index + 1];
+    }
+  }
+
+  return undefined;
 }
 
 /**
@@ -104,9 +134,9 @@ export function generatedDir(): string {
  * ⚠️ **逐个契约生成一个文件** ——
  * 一个服务一个文件，改一个契约不用重新生成全部。
  */
-export function runGenerate(): number {
+export function runGenerate(out?: string | undefined): number {
   const bundle = loadBundle();
-  const outputDir = generatedDir();
+  const outputDir = generatedDir(out);
 
   mkdirSync(outputDir, { recursive: true });
 
@@ -195,7 +225,7 @@ export function main(argv: string[]): number {
     case 'release-check':
       return runReleaseCheck();
     case 'generate':
-      return runGenerate();
+      return runGenerate(readFlag('--out'));
     default:
       console.error(`未知命令：${command}`);
       console.error('可用命令：validate | snapshot | list | release-check | generate');

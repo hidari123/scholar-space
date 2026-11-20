@@ -16,26 +16,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import { usePreferences } from '../core/preferences';
+import { APP_MESSAGES } from '../i18n';
 
 import { AppShell } from './AppShell';
-import { CommunityPage, HomePage, OrchestraPage, PapersPage, SlidesPage } from './pages';
+import { DashboardPage } from './pages';
 
 /**
  * 路由表。
  *
- * ⚠️ **页面都是懒加载的** —— 首屏只下需要的代码。
+ * ⚠️ **主仓是「集成壳」** ——
+ *    业务功能都在各自的独立仓里（各自独立部署）。
+ *    这里只保留工作台，以及到各独立站的跳转入口。
  */
 const router = createBrowserRouter([
   {
     path: '/',
     element: <AppShell />,
-    children: [
-      { index: true, element: <HomePage /> },
-      { path: 'papers', element: <PapersPage /> },
-      { path: 'slides', element: <SlidesPage /> },
-      { path: 'community', element: <CommunityPage /> },
-      { path: 'orchestra', element: <OrchestraPage /> },
-    ],
+    children: [{ index: true, element: <DashboardPage /> }],
   },
 ]);
 
@@ -70,6 +67,9 @@ export function App() {
     <ScholarSpaceProvider
       brand={brand}
       locale={preferences.locale}
+      // ⚠️ **主站文案** —— 通过 namespaces 合并，
+      //    这样 `common.*` 那些公共文案不会丢。
+      namespaces={{ app: APP_MESSAGES }}
       preferences={{
         // ⚠️ **'system' 对应 AntD 的 'auto'** ——
         // 两套命名不一样，这里做一次映射。

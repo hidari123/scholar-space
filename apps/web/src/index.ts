@@ -6,13 +6,7 @@
 
 export { App } from './app/App';
 export { AppShell } from './app/AppShell';
-export {
-  CommunityPage,
-  HomePage,
-  OrchestraPage,
-  PapersPage,
-  SlidesPage,
-} from './app/pages';
+export { DashboardPage } from './app/pages';
 export type { ApiResponse } from './core/api-client';
 export { ApiError, request, unwrap } from './core/api-client';
 export type {
