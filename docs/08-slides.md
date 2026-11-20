@@ -16,10 +16,10 @@
 > | PNG 预览 | ✅ | `slides-render/render/png.py`（与 pptx 共用量测）|
 > | 真实论文端到端验证 | ✅ | `slides-render/tests/test_e2e.py`（28 测试）|
 > | Pillow 真实字体度量 | ✅ | `slides-render/layout/fonts.py`（误差 33% → 0）|
-> | 图片渲染 | ⬜ | M3.2 |
-> | 溢出降级（TRUNCATE/SPLIT/REGENERATE）| ⬜ | M3.2 |
-> | PDF 导出 | ⬜ | M3.3 |
-> | HTTP 层 | ⬜ | M3.3 |
+> | 图片渲染 | ✅ | `layout/images.py`（等比缩放 + 居中 + 裁剪）|
+> | 溢出降级（TRUNCATE/SPLIT/REGENERATE）| ✅ | `application/overflow.py`（四级策略）|
+> | PDF 导出 | ✅ | `render/export.py`（LibreOffice 优先，PNG 拼接兜底）|
+> | HTTP 层 | ✅ | `libs/slides-http`（9 端点）|
 
 ---
 
