@@ -1,6 +1,6 @@
 name: ci
 
-# ⚠️ 子仓 CI 模板 —— 复制到 12 个独立子仓。
+# ⚠️ 子仓 CI 模板 —— 复制到各独立子仓。
 #
 # ⚠️⚠️ 关键：**不依赖主仓在场**。
 #    规范基座由 `cli sync` 复制进本仓（ruff.toml / mypy.ini / tsconfig.base.json），
@@ -54,6 +54,13 @@ jobs:
           pnpm --filter @scholarspace/guards build
           cp -r tools/guards/dist $GITHUB_WORKSPACE/tools-guards
 
+      # ⚠️ **G28 需要 Python**（它用 `ast` 解析 import）——
+      #    所以这个 job 也要装 Python，否则四层架构检查会「静默跳过」。
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 安装 Python 3.13
+        run: uv python install 3.13
+
       - name: 跑护栏
         run: node tools-guards/cli.js run
 
@@ -63,6 +70,10 @@ jobs:
   python:
     name: Python 门禁
     runs-on: ubuntu-latest
+    strategy:
+      # ⚠️ **每个包一个矩阵项** —— 独立仓里可能有多个 libs/* 包
+      matrix:
+        package: [REPLACE_PACKAGE_LIST]
     steps:
       - uses: actions/checkout@v4
 
@@ -72,16 +83,30 @@ jobs:
         run: uv python install 3.13
 
       - name: 质量门禁
+        working-directory: ${{ matrix.package }}
         run: |
           uv venv --python 3.13
           uv pip install -e ".[dev]" --no-deps
           uv pip install pydantic pydantic-settings structlog \
-            pytest pytest-asyncio pytest-cov ruff mypy import-linter
+            pytest pytest-asyncio pytest-cov ruff mypy
           .venv/bin/ruff check src/ tests/
           .venv/bin/ruff format --check src/ tests/
           .venv/bin/mypy src/
-          .venv/bin/import-linter lint
           .venv/bin/python -m pytest tests/ -q --cov=.
+
+      # ⚠️ **import-linter 是可选的** ——
+      #    只有包里有 setup.cfg 契约时才跑。
+      #    ⚠️ 没装它就报「命令不存在」，CI 会红，
+      #    但那不是代码的问题。
+      - name: import-linter（如果有契约）
+        working-directory: ${{ matrix.package }}
+        run: |
+          if [ -f setup.cfg ] && grep -q "importlinter:contract" setup.cfg; then
+            uv pip install import-linter
+            .venv/bin/import-linter lint
+          else
+            echo "本包没有 import-linter 契约 —— 跳过（架构由 G28 护栏保证）"
+          fi
 
   # ══════════════════════════════════════════════════════
   # TypeScript 门禁
