@@ -66,13 +66,32 @@ scholarspace/                    ← 主项目（组装层 · 零业务代码）
 
 ## 当前状态
 
+> 📅 **2026-11-21 实测校准**（主仓 `pnpm verify` 全绿 + 16 条护栏全过）
+
 | 阶段 | 状态 |
 |---|---|
-| 规划文档 | ✅ 完成（13 主文档 + 16 ADR）|
-| 待确认项 | ⏳ 16 项（见 [docs/MANIFEST.md](./docs/MANIFEST.md)）|
-| **M0 地基** | ✅ **完成**（8 Step 全绿，179 tests）|
-| **M1 样板** | 🔄 **进行中** —— identity 仓 4 个包完成（139 tests）|
-| 代码总量 | ✅ 318 tests |
+| 规划文档 | ✅ 完成（19 主文档 + 18 ADR）|
+| 待确认项 | ⏳ 13 项（见 [docs/MANIFEST.md](./docs/MANIFEST.md)）|
+| **M0 地基** | ✅ **完成**（conventions / ui / core / cli / contracts / guards 全落地）|
+| **M1 样板** | ✅ **完成** —— identity 独立仓 5 包（core/flows/providers/http/ui）|
+| **M2 编排** | 🔄 **进行中** —— events 服务已落地，画布前端未建 |
+| **M3 PPT** | ✅ **完成** —— slides 独立仓 224 tests，矢量式渲染 G2 闸门通过 |
+| **M4 文献** | ✅ **完成** —— paper 独立仓 118 tests |
+| **M5 社区/计费** | 🔄 **进行中** —— billing + federation 已落地，社区切流未做 |
+| **M6 组装** | 🔄 **进行中** —— 契约 + codegen + 网关已落地，主站退回集成壳 |
+| **M7 收口** | ✅ **完成** —— 兼容矩阵 + pdf-viewer 收编指南（数据迁移待真实环境）|
+
+### 实测数据（2026-11-21）
+
+| 项 | 数量 | 状态 |
+|---|---|---|
+| 主仓 TypeScript 测试 | 304 | ✅ 全绿 |
+| 主仓 Python 测试 | 334 | ✅ 全绿（1 skipped）|
+| 架构护栏 | 16 / 16 | ✅ 全绿 |
+| Lint（Biome）| 5 包 | ✅ 零问题 |
+| 类型检查（tsc）| 5 包 | ✅ 零错误 |
+
+> 独立仓另有 658 tests（slides 224 / identity 187 / paper 118 / orchestra 108 / community 21）。
 
 ---
 

@@ -7,6 +7,9 @@ packages:
 
   # ── 示例包（验证 conventions 可用性）──────────────────
   - 'examples/*'
+allowBuilds:
+  core-js: true
+  esbuild: true
 
 # 独立子项目（polyrepo）在各自仓内独立管理 workspace。
 # 本地联调时用 `scripts/dev-setup.mjs` 克隆到 ../scholarspace-<name>，

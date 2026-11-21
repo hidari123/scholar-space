@@ -94,7 +94,7 @@
 | 2 | 建 `scholarspace` 主项目骨架 + `packages/conventions/` | 确认 | ✅ |
 | 3 | 建 `packages/ui`（AntD 基座 + 品牌主题 + i18n）| 2 | ✅ |
 | 4 | 建 `cli` 脚手架（`new` + `guards run` + `i18n check`）| 2 | ✅ |
-| 5 | 建 `contracts/` + codegen | 2 | 🔄 骨架有，契约未打通（M6）|
+| 5 | 建 `contracts/` + codegen | 2 | ✅ 5 份 OpenAPI 契约 + codegen 37 tests |
 | 6 | 第一个样板子项目（`auth`）验证规范 | 3 4 5 | ✅ |
 | 7 | **G1 闸门评审** —— 规范可用性评估 | 6 | ✅ **已通过**（ADR-0018）|
-| 8 | 进入 M2（orchestra）| 7 | 🔄 **进行中** |
+| 8 | 进入 M2（orchestra）| 7 | 🔄 **进行中** —— events 已落地，画布前端未建 |
